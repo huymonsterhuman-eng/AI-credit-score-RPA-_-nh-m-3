@@ -56,8 +56,8 @@ DEFAULTS = {
     'Interest_Rate': 12, 'Outstanding_Debt': 1200.0, 'Credit_Utilization_Ratio': 30.0,
     'Delay_from_due_date': 5, 'Num_of_Delayed_Payment': 3, 'Num_Credit_Inquiries': 2,
     'Credit_Mix': 'Standard', 'Changed_Credit_Limit': 5.0,
-    'Has_Credit_Builder_Loan': False, 'Has_Personal_Loan': False,
-    'Has_Debt_Consolidation_Loan': False, 'Has_Student_Loan': False,
+    'Has_Credit_Builder_Loan': False, 'Has_Home_Equity_Loan': False,
+    'Has_Mortgage_Loan': False, 'Has_Student_Loan': False,
     'Has_Payday_Loan': False,
     'customer_name': '', 'customer_email': '',
 }
@@ -72,8 +72,8 @@ PRESETS = {
         'Interest_Rate': 32, 'Outstanding_Debt': 12000.0, 'Credit_Utilization_Ratio': 96.0,
         'Delay_from_due_date': 45, 'Num_of_Delayed_Payment': 28, 'Num_Credit_Inquiries': 15,
         'Credit_Mix': 'Bad', 'Changed_Credit_Limit': 22.0,
-        'Has_Credit_Builder_Loan': False, 'Has_Personal_Loan': True,
-        'Has_Debt_Consolidation_Loan': True, 'Has_Student_Loan': False,
+        'Has_Credit_Builder_Loan': False, 'Has_Home_Equity_Loan': False,
+        'Has_Mortgage_Loan': False, 'Has_Student_Loan': False,
         'Has_Payday_Loan': True,
     },
     'Standard': DEFAULTS,
@@ -86,8 +86,8 @@ PRESETS = {
         'Interest_Rate': 11, 'Outstanding_Debt': 1500.0, 'Credit_Utilization_Ratio': 28.0,
         'Delay_from_due_date': 4, 'Num_of_Delayed_Payment': 1, 'Num_Credit_Inquiries': 2,
         'Credit_Mix': 'Good', 'Changed_Credit_Limit': 6.0,
-        'Has_Credit_Builder_Loan': False, 'Has_Personal_Loan': True,
-        'Has_Debt_Consolidation_Loan': False, 'Has_Student_Loan': False,
+        'Has_Credit_Builder_Loan': False, 'Has_Home_Equity_Loan': True,
+        'Has_Mortgage_Loan': True, 'Has_Student_Loan': False,
         'Has_Payday_Loan': False,
     },
     'Exceptional': {
@@ -99,8 +99,8 @@ PRESETS = {
         'Interest_Rate': 5, 'Outstanding_Debt': 100.0, 'Credit_Utilization_Ratio': 5.0,
         'Delay_from_due_date': 0, 'Num_of_Delayed_Payment': 0, 'Num_Credit_Inquiries': 0,
         'Credit_Mix': 'Good', 'Changed_Credit_Limit': 2.0,
-        'Has_Credit_Builder_Loan': False, 'Has_Personal_Loan': True,
-        'Has_Debt_Consolidation_Loan': False, 'Has_Student_Loan': False,
+        'Has_Credit_Builder_Loan': False, 'Has_Home_Equity_Loan': True,
+        'Has_Mortgage_Loan': False, 'Has_Student_Loan': False,
         'Has_Payday_Loan': False,
     },
 }
@@ -216,13 +216,14 @@ with st.form('credit_form'):
     c1, c2, c3, c4, c5 = st.columns(5)
     Has_Credit_Builder_Loan = int(c1.checkbox('Vay xây dựng tín dụng',
                                                key='Has_Credit_Builder_Loan'))
-    Has_Personal_Loan = int(c2.checkbox('Vay cá nhân', key='Has_Personal_Loan'))
-    Has_Debt_Consolidation_Loan = int(c3.checkbox('Vay hợp nhất nợ',
-                                                   key='Has_Debt_Consolidation_Loan'))
+    Has_Home_Equity_Loan = int(c2.checkbox('Vay thế chấp nhà (Home Equity)',
+                                            key='Has_Home_Equity_Loan'))
+    Has_Mortgage_Loan = int(c3.checkbox('Vay mua nhà (Mortgage)',
+                                         key='Has_Mortgage_Loan'))
     Has_Student_Loan = int(c4.checkbox('Vay sinh viên', key='Has_Student_Loan'))
-    Has_Payday_Loan = int(c5.checkbox('Vay ngắn hạn', key='Has_Payday_Loan'))
-    Num_Loan_Types = sum([Has_Credit_Builder_Loan, Has_Personal_Loan,
-                           Has_Debt_Consolidation_Loan, Has_Student_Loan,
+    Has_Payday_Loan = int(c5.checkbox('Vay ngắn hạn (Payday)', key='Has_Payday_Loan'))
+    Num_Loan_Types = sum([Has_Credit_Builder_Loan, Has_Home_Equity_Loan,
+                           Has_Mortgage_Loan, Has_Student_Loan,
                            Has_Payday_Loan])
 
     with st.expander('📝 Thông tin liên hệ (tùy chọn — để gửi email kết quả)'):
@@ -269,8 +270,8 @@ if submitted:
         'Spending_Level': Spending_Level, 'Payment_Value': Payment_Value,
         'Num_Loan_Types': Num_Loan_Types,
         'Has_Credit_Builder_Loan': Has_Credit_Builder_Loan,
-        'Has_Personal_Loan': Has_Personal_Loan,
-        'Has_Debt_Consolidation_Loan': Has_Debt_Consolidation_Loan,
+        'Has_Home_Equity_Loan': Has_Home_Equity_Loan,
+        'Has_Mortgage_Loan': Has_Mortgage_Loan,
         'Has_Student_Loan': Has_Student_Loan,
         'Has_Payday_Loan': Has_Payday_Loan,
         # Ratios
