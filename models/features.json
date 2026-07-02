@@ -1,0 +1,652 @@
+{
+  "task": "classification_3class_temporal",
+  "target": "Credit_Score",
+  "target_order": [
+    "Poor",
+    "Standard",
+    "Good"
+  ],
+  "best_model": "LightGBM + Temporal Features",
+  "metrics": {
+    "accuracy": 0.6929,
+    "f1_macro": 0.6865338173960499,
+    "auc_ovr": 0.8588302541033516
+  },
+  "input_columns": [
+    "Age",
+    "Occupation",
+    "Annual_Income",
+    "Monthly_Inhand_Salary",
+    "Num_Bank_Accounts",
+    "Num_Credit_Card",
+    "Interest_Rate",
+    "Num_of_Loan",
+    "Delay_from_due_date",
+    "Num_of_Delayed_Payment",
+    "Changed_Credit_Limit",
+    "Num_Credit_Inquiries",
+    "Credit_Mix",
+    "Outstanding_Debt",
+    "Credit_Utilization_Ratio",
+    "Payment_of_Min_Amount",
+    "Total_EMI_per_month",
+    "Amount_invested_monthly",
+    "Monthly_Balance",
+    "Credit_History_Months",
+    "month_idx",
+    "Debt_to_Income_Annual",
+    "EMI_to_Salary_Ratio",
+    "Investment_Rate",
+    "CC_per_Bank",
+    "Loan_per_CC",
+    "Age_Start_Credit",
+    "Debt_per_Loan",
+    "Balance_to_Salary",
+    "Spending_Level",
+    "Payment_Value",
+    "Num_Loan_Types",
+    "Has_Payday_Loan",
+    "Has_Credit_Builder_Loan",
+    "Has_Home_Equity_Loan",
+    "Has_Student_Loan",
+    "Has_Mortgage_Loan",
+    "Outstanding_Debt_lag1",
+    "Outstanding_Debt_delta1",
+    "Outstanding_Debt_roll_mean3",
+    "Outstanding_Debt_roll_std3",
+    "Num_of_Delayed_Payment_lag1",
+    "Num_of_Delayed_Payment_delta1",
+    "Num_of_Delayed_Payment_roll_mean3",
+    "Num_of_Delayed_Payment_roll_std3",
+    "Delay_from_due_date_lag1",
+    "Delay_from_due_date_delta1",
+    "Delay_from_due_date_roll_mean3",
+    "Delay_from_due_date_roll_std3",
+    "Credit_Utilization_Ratio_lag1",
+    "Credit_Utilization_Ratio_delta1",
+    "Credit_Utilization_Ratio_roll_mean3",
+    "Credit_Utilization_Ratio_roll_std3",
+    "Monthly_Balance_lag1",
+    "Monthly_Balance_delta1",
+    "Monthly_Balance_roll_mean3",
+    "Monthly_Balance_roll_std3",
+    "Changed_Credit_Limit_lag1",
+    "Changed_Credit_Limit_delta1",
+    "Changed_Credit_Limit_roll_mean3",
+    "Changed_Credit_Limit_roll_std3",
+    "Debt_to_Income_Annual_lag1",
+    "Debt_to_Income_Annual_delta1",
+    "Debt_to_Income_Annual_roll_mean3",
+    "Debt_to_Income_Annual_roll_std3",
+    "EMI_to_Salary_Ratio_lag1",
+    "EMI_to_Salary_Ratio_delta1",
+    "EMI_to_Salary_Ratio_roll_mean3",
+    "EMI_to_Salary_Ratio_roll_std3",
+    "delay_streak_prev",
+    "debt_trend_prev"
+  ],
+  "numeric_cols": [
+    "Age",
+    "Annual_Income",
+    "Monthly_Inhand_Salary",
+    "Num_Bank_Accounts",
+    "Num_Credit_Card",
+    "Interest_Rate",
+    "Num_of_Loan",
+    "Delay_from_due_date",
+    "Num_of_Delayed_Payment",
+    "Changed_Credit_Limit",
+    "Num_Credit_Inquiries",
+    "Outstanding_Debt",
+    "Credit_Utilization_Ratio",
+    "Total_EMI_per_month",
+    "Amount_invested_monthly",
+    "Monthly_Balance",
+    "Credit_History_Months",
+    "month_idx",
+    "Debt_to_Income_Annual",
+    "EMI_to_Salary_Ratio",
+    "Investment_Rate",
+    "CC_per_Bank",
+    "Loan_per_CC",
+    "Age_Start_Credit",
+    "Debt_per_Loan",
+    "Balance_to_Salary",
+    "Num_Loan_Types",
+    "Has_Payday_Loan",
+    "Has_Credit_Builder_Loan",
+    "Has_Home_Equity_Loan",
+    "Has_Student_Loan",
+    "Has_Mortgage_Loan",
+    "Outstanding_Debt_lag1",
+    "Outstanding_Debt_delta1",
+    "Outstanding_Debt_roll_mean3",
+    "Outstanding_Debt_roll_std3",
+    "Num_of_Delayed_Payment_lag1",
+    "Num_of_Delayed_Payment_delta1",
+    "Num_of_Delayed_Payment_roll_mean3",
+    "Num_of_Delayed_Payment_roll_std3",
+    "Delay_from_due_date_lag1",
+    "Delay_from_due_date_delta1",
+    "Delay_from_due_date_roll_mean3",
+    "Delay_from_due_date_roll_std3",
+    "Credit_Utilization_Ratio_lag1",
+    "Credit_Utilization_Ratio_delta1",
+    "Credit_Utilization_Ratio_roll_mean3",
+    "Credit_Utilization_Ratio_roll_std3",
+    "Monthly_Balance_lag1",
+    "Monthly_Balance_delta1",
+    "Monthly_Balance_roll_mean3",
+    "Monthly_Balance_roll_std3",
+    "Changed_Credit_Limit_lag1",
+    "Changed_Credit_Limit_delta1",
+    "Changed_Credit_Limit_roll_mean3",
+    "Changed_Credit_Limit_roll_std3",
+    "Debt_to_Income_Annual_lag1",
+    "Debt_to_Income_Annual_delta1",
+    "Debt_to_Income_Annual_roll_mean3",
+    "Debt_to_Income_Annual_roll_std3",
+    "EMI_to_Salary_Ratio_lag1",
+    "EMI_to_Salary_Ratio_delta1",
+    "EMI_to_Salary_Ratio_roll_mean3",
+    "EMI_to_Salary_Ratio_roll_std3",
+    "delay_streak_prev",
+    "debt_trend_prev"
+  ],
+  "ordinal_cols": [
+    "Credit_Mix"
+  ],
+  "onehot_cols": [
+    "Occupation",
+    "Payment_of_Min_Amount",
+    "Spending_Level",
+    "Payment_Value"
+  ],
+  "credit_mix_order": [
+    "Bad",
+    "Standard",
+    "Good"
+  ],
+  "temporal_cols_base": [
+    "Outstanding_Debt",
+    "Num_of_Delayed_Payment",
+    "Delay_from_due_date",
+    "Credit_Utilization_Ratio",
+    "Monthly_Balance",
+    "Changed_Credit_Limit",
+    "Debt_to_Income_Annual",
+    "EMI_to_Salary_Ratio"
+  ],
+  "temporal_suffixes": [
+    "_lag1",
+    "_delta1",
+    "_roll_mean3",
+    "_roll_std3"
+  ],
+  "extra_temporal": [
+    "delay_streak_prev",
+    "debt_trend_prev"
+  ],
+  "categorical_values": {
+    "Occupation": [
+      "Accountant",
+      "Architect",
+      "Developer",
+      "Doctor",
+      "Engineer",
+      "Entrepreneur",
+      "Journalist",
+      "Lawyer",
+      "Manager",
+      "Mechanic",
+      "Media_Manager",
+      "Musician",
+      "Scientist",
+      "Teacher",
+      "Writer"
+    ],
+    "Payment_of_Min_Amount": [
+      "NM",
+      "No",
+      "Yes"
+    ],
+    "Spending_Level": [
+      "High",
+      "Low"
+    ],
+    "Payment_Value": [
+      "Large",
+      "Medium",
+      "Small"
+    ],
+    "Credit_Mix": [
+      "Bad",
+      "Good",
+      "Standard"
+    ]
+  },
+  "numeric_ranges": {
+    "Age": {
+      "min": 14.0,
+      "max": 100.0,
+      "mean": 34.41226,
+      "median": 33.0
+    },
+    "Annual_Income": {
+      "min": 7005.93,
+      "max": 24198062.0,
+      "mean": 176415.70129815003,
+      "median": 37578.61
+    },
+    "Monthly_Inhand_Salary": {
+      "min": 303.6454166666666,
+      "max": 15204.633333333331,
+      "mean": 4194.170849600524,
+      "median": 3093.745000000001
+    },
+    "Num_Bank_Accounts": {
+      "min": 0.0,
+      "max": 20.0,
+      "mean": 5.56023,
+      "median": 6.0
+    },
+    "Num_Credit_Card": {
+      "min": 0.0,
+      "max": 20.0,
+      "mean": 5.86158,
+      "median": 5.0
+    },
+    "Interest_Rate": {
+      "min": 1.0,
+      "max": 40.0,
+      "mean": 15.04963,
+      "median": 13.0
+    },
+    "Num_of_Loan": {
+      "min": 0.0,
+      "max": 20.0,
+      "mean": 3.47445,
+      "median": 3.0
+    },
+    "Delay_from_due_date": {
+      "min": -5.0,
+      "max": 67.0,
+      "mean": 21.06878,
+      "median": 18.0
+    },
+    "Num_of_Delayed_Payment": {
+      "min": 0.0,
+      "max": 50.0,
+      "mean": 13.616120776790899,
+      "median": 14.0
+    },
+    "Changed_Credit_Limit": {
+      "min": -6.49,
+      "max": 36.97,
+      "mean": 10.389025115157953,
+      "median": 9.4
+    },
+    "Num_Credit_Inquiries": {
+      "min": 0.0,
+      "max": 30.0,
+      "mean": 6.188687713571683,
+      "median": 6.0
+    },
+    "Outstanding_Debt": {
+      "min": 0.23,
+      "max": 4998.07,
+      "mean": 1426.220376,
+      "median": 1166.155
+    },
+    "Credit_Utilization_Ratio": {
+      "min": 20.0,
+      "max": 50.00000000000001,
+      "mean": 32.2851725189436,
+      "median": 32.30578367171092
+    },
+    "Total_EMI_per_month": {
+      "min": 0.0,
+      "max": 82331.0,
+      "mean": 1403.1182166159929,
+      "median": 69.24947329972044
+    },
+    "Amount_invested_monthly": {
+      "min": 0.0,
+      "max": 10000.0,
+      "mean": 637.4129984078688,
+      "median": 135.92568154608836
+    },
+    "Monthly_Balance": {
+      "min": -3.333333333333333e+26,
+      "max": 1602.0405189622518,
+      "mean": -3.0364372469635625e+22,
+      "median": 336.71918978926107
+    },
+    "Credit_History_Months": {
+      "min": 1.0,
+      "max": 404.0,
+      "mean": 221.19540507859733,
+      "median": 219.0
+    },
+    "month_idx": {
+      "min": 1.0,
+      "max": 8.0,
+      "mean": 4.5,
+      "median": 4.5
+    },
+    "Debt_to_Income_Annual": {
+      "min": 4.086799670023885e-07,
+      "max": 0.6832515548332656,
+      "mean": 0.06001770569640067,
+      "median": 0.02780103061012406
+    },
+    "EMI_to_Salary_Ratio": {
+      "min": 0.0,
+      "max": 227.73931765258,
+      "mean": 0.6057272789756782,
+      "median": 0.02523182327171653
+    },
+    "Investment_Rate": {
+      "min": 0.0,
+      "max": 30.108843469140943,
+      "mean": 0.24813822760374754,
+      "median": 0.04725706574664902
+    },
+    "CC_per_Bank": {
+      "min": 0.0,
+      "max": 20.0,
+      "mean": 1.2985558753961592,
+      "median": 1.0
+    },
+    "Loan_per_CC": {
+      "min": 0.0,
+      "max": 20.0,
+      "mean": 0.6641919297271993,
+      "median": 0.6
+    },
+    "Age_Start_Credit": {
+      "min": -19.416666666666664,
+      "max": 99.91666666666667,
+      "mean": 15.986550511157525,
+      "median": 15.25
+    },
+    "Debt_per_Loan": {
+      "min": 0.04857142857142858,
+      "max": 1498.41,
+      "mean": 419.10927184946695,
+      "median": 355.455
+    },
+    "Balance_to_Salary": {
+      "min": -2.2645414699818037e+23,
+      "max": 0.876486881388083,
+      "mean": -1.0901320434134764e+19,
+      "median": 0.11663855947433215
+    },
+    "Num_Loan_Types": {
+      "min": 0.0,
+      "max": 9.0,
+      "mean": 3.13672,
+      "median": 3.0
+    },
+    "Has_Payday_Loan": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.31944,
+      "median": 0.0
+    },
+    "Has_Credit_Builder_Loan": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.31728,
+      "median": 0.0
+    },
+    "Has_Home_Equity_Loan": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.314,
+      "median": 0.0
+    },
+    "Has_Student_Loan": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.3104,
+      "median": 0.0
+    },
+    "Has_Mortgage_Loan": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.3136,
+      "median": 0.0
+    },
+    "Outstanding_Debt_lag1": {
+      "min": 0.23,
+      "max": 4998.07,
+      "mean": 1426.2203759999998,
+      "median": 1166.155
+    },
+    "Outstanding_Debt_delta1": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0,
+      "median": 0.0
+    },
+    "Outstanding_Debt_roll_mean3": {
+      "min": 0.23,
+      "max": 4998.07,
+      "mean": 1426.2169245192445,
+      "median": 1178.3
+    },
+    "Outstanding_Debt_roll_std3": {
+      "min": 0.0,
+      "max": 3517.297622045944,
+      "mean": 109.61457292789844,
+      "median": 0.0
+    },
+    "Num_of_Delayed_Payment_lag1": {
+      "min": 0.0,
+      "max": 50.0,
+      "mean": 13.612481251075758,
+      "median": 14.0
+    },
+    "Num_of_Delayed_Payment_delta1": {
+      "min": -50.0,
+      "max": 50.0,
+      "mean": 0.0038604423643887414,
+      "median": 0.0
+    },
+    "Num_of_Delayed_Payment_roll_mean3": {
+      "min": 0.0,
+      "max": 50.0,
+      "mean": 13.61703627247614,
+      "median": 14.0
+    },
+    "Num_of_Delayed_Payment_roll_std3": {
+      "min": 0.0,
+      "max": 35.355339059327385,
+      "mean": 1.8258728605986358,
+      "median": 1.1547005383792484
+    },
+    "Delay_from_due_date_lag1": {
+      "min": -5.0,
+      "max": 67.0,
+      "mean": 21.06990857142857,
+      "median": 18.0
+    },
+    "Delay_from_due_date_delta1": {
+      "min": -10.0,
+      "max": 10.0,
+      "mean": 0.0013485714285714286,
+      "median": 0.0
+    },
+    "Delay_from_due_date_roll_mean3": {
+      "min": -4.0,
+      "max": 66.0,
+      "mean": 21.069942366090327,
+      "median": 18.0
+    },
+    "Delay_from_due_date_roll_std3": {
+      "min": 0.0,
+      "max": 45.961940777125626,
+      "mean": 2.4539191668050577,
+      "median": 1.154700538380153
+    },
+    "Credit_Utilization_Ratio_lag1": {
+      "min": 20.0,
+      "max": 50.00000000000001,
+      "mean": 32.27601651050558,
+      "median": 32.292959615515
+    },
+    "Credit_Utilization_Ratio_delta1": {
+      "min": -21.694154903556896,
+      "max": 25.09965384216227,
+      "mean": 0.00818787799056561,
+      "median": 0.005312576562250371
+    },
+    "Credit_Utilization_Ratio_roll_mean3": {
+      "min": 21.04084426366216,
+      "max": 46.38483337726565,
+      "mean": 32.275898288813124,
+      "median": 32.23503517571466
+    },
+    "Credit_Utilization_Ratio_roll_std3": {
+      "min": 0.00028803539171442464,
+      "max": 19.06221909676467,
+      "mean": 4.378244618079068,
+      "median": 4.227968005487721
+    },
+    "Monthly_Balance_lag1": {
+      "min": -3.333333333333333e+26,
+      "max": 1602.0405189622518,
+      "mean": -3.084741710720634e+22,
+      "median": 336.39565347067963
+    },
+    "Monthly_Balance_delta1": {
+      "min": -3.333333333333333e+26,
+      "max": 3.333333333333333e+26,
+      "mean": -3.9002776997722236e+21,
+      "median": 0.07324409183721059
+    },
+    "Monthly_Balance_roll_mean3": {
+      "min": -1.6666666666666666e+26,
+      "max": 1533.6743324035172,
+      "mean": -3.167616951752192e+22,
+      "median": 340.47205132309574
+    },
+    "Monthly_Balance_roll_std3": {
+      "min": 0.0,
+      "max": 2.3570226039551584e+26,
+      "mean": 5.059731548619173e+22,
+      "median": 57.932183584385236
+    },
+    "Changed_Credit_Limit_lag1": {
+      "min": -6.48,
+      "max": 36.49,
+      "mean": 10.387658849211444,
+      "median": 9.4
+    },
+    "Changed_Credit_Limit_delta1": {
+      "min": -14.000000000000005,
+      "max": 14.000000000000004,
+      "mean": -0.00020274541139429287,
+      "median": 0.0
+    },
+    "Changed_Credit_Limit_roll_mean3": {
+      "min": -5.76,
+      "max": 35.3,
+      "mean": 10.389346435953856,
+      "median": 9.45
+    },
+    "Changed_Credit_Limit_roll_std3": {
+      "min": 0.0,
+      "max": 25.92253459829883,
+      "mean": 1.6321163715803324,
+      "median": 0.0
+    },
+    "Debt_to_Income_Annual_lag1": {
+      "min": 4.086799670023885e-07,
+      "max": 0.6832515548332656,
+      "mean": 0.06000710213763556,
+      "median": 0.027791025861009067
+    },
+    "Debt_to_Income_Annual_delta1": {
+      "min": -0.5794869132787702,
+      "max": 0.5959779710562448,
+      "mean": 2.9381141857562317e-05,
+      "median": 0.0
+    },
+    "Debt_to_Income_Annual_roll_mean3": {
+      "min": 2.66998022821598e-06,
+      "max": 0.6832515548332656,
+      "mean": 0.06001244396650786,
+      "median": 0.029316885508576897
+    },
+    "Debt_to_Income_Annual_roll_std3": {
+      "min": 0.0,
+      "max": 0.4753526087179765,
+      "mean": 0.007622783017811634,
+      "median": 0.0
+    },
+    "EMI_to_Salary_Ratio_lag1": {
+      "min": 0.0,
+      "max": 227.73931765258,
+      "mean": 0.5991948288172821,
+      "median": 0.02507734046210084
+    },
+    "EMI_to_Salary_Ratio_delta1": {
+      "min": -227.59558831094301,
+      "max": 227.59558831094301,
+      "mean": 0.01871205097621359,
+      "median": 0.0
+    },
+    "EMI_to_Salary_Ratio_roll_mean3": {
+      "min": 0.0,
+      "max": 204.8951563561131,
+      "mean": 0.599463350260223,
+      "median": 0.026466689191244352
+    },
+    "EMI_to_Salary_Ratio_roll_std3": {
+      "min": 0.0,
+      "max": 160.93438386280954,
+      "mean": 0.8668781991803327,
+      "median": 0.0
+    },
+    "delay_streak_prev": {
+      "min": 0.0,
+      "max": 7.0,
+      "mean": 3.02017,
+      "median": 3.0
+    },
+    "debt_trend_prev": {
+      "min": -1.555096908343677e-12,
+      "max": 1.291718275575735e-12,
+      "mean": -6.666298885410481e-14,
+      "median": -2.575190112248781e-14
+    }
+  },
+  "fico_conversion": {
+    "formula": "score = 300 + (0*P_poor + 1*P_std + 2*P_good) / 2 * 550",
+    "bins": [
+      {
+        "max": 580,
+        "label": "Poor"
+      },
+      {
+        "max": 670,
+        "label": "Fair"
+      },
+      {
+        "max": 740,
+        "label": "Good"
+      },
+      {
+        "max": 800,
+        "label": "Very Good"
+      },
+      {
+        "max": 850,
+        "label": "Exceptional"
+      }
+    ]
+  },
+  "note": "Model uses temporal features (lag/delta/rolling/streak/trend). Streamlit form needs both current-month values AND past-month values or auto-compute defaults."
+}

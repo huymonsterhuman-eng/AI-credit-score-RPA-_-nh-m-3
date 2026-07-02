@@ -1,0 +1,180 @@
+{
+  "name": "Credit Scoring - Save & Notify",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "credit-scoring",
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 400],
+      "id": "webhook-node",
+      "name": "Webhook",
+      "webhookId": "credit-scoring-webhook"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.body.timestamp }}",
+            "customer_name": "={{ $json.body.customer_name }}",
+            "customer_email": "={{ $json.body.customer_email }}",
+            "fico_score": "={{ $json.body.fico_score }}",
+            "rating": "={{ $json.body.rating }}",
+            "predicted_class": "={{ $json.body.predicted_class }}",
+            "p_poor": "={{ $json.body.proba.Poor }}",
+            "p_standard": "={{ $json.body.proba.Standard }}",
+            "p_good": "={{ $json.body.proba.Good }}",
+            "notes": "={{ $json.body.fico_score < 580 ? 'Cần review manual' : '' }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [500, 400],
+      "id": "sheets-node",
+      "name": "Append to Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_GSHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "cond-1",
+              "leftValue": "={{ $('Webhook').item.json.body.customer_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [760, 400],
+      "id": "if-node",
+      "name": "Có email?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const b = $('Webhook').item.json.body;\nconst ratingColors = {\n  'Poor': '#d9534f',\n  'Fair': '#e67e22',\n  'Good': '#7cb342',\n  'Very Good': '#43a047',\n  'Exceptional': '#1b5e20'\n};\nconst color = ratingColors[b.rating] || '#666';\nconst pct = (v) => (v * 100).toFixed(1);\nconst score = Math.round(b.fico_score);\n\n// Sinh gợi ý theo score\nlet tips = [];\nif (score < 580) tips.push('Điểm rất thấp — cần cải thiện thanh toán đúng hạn.');\nelse if (score < 670) tips.push('Điểm ở mức trung bình — có thể vay nhưng lãi suất cao.');\nelse if (score < 740) tips.push('Điểm tốt — đủ điều kiện vay với lãi suất ưu đãi.');\nelse tips.push('Điểm rất tốt — bạn thuộc nhóm khách hàng ưu tiên.');\nif ((b.inputs && b.inputs.Debt_to_Income_Annual) > 0.4)\n  tips.push('Giảm tỷ lệ nợ/thu nhập xuống dưới 40%.');\nif ((b.inputs && b.inputs.Credit_Utilization_Ratio) > 60)\n  tips.push('Giữ tỷ lệ sử dụng tín dụng dưới 30%.');\n\nconst tipsHTML = tips.map(t => `<li style=\"margin:6px 0;\">${t}</li>`).join('');\n\nconst html = `<!DOCTYPE html>\n<html><head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family: Arial, Helvetica, sans-serif; background:#f5f5f5; padding:20px; margin:0;\">\n  <div style=\"max-width:640px; margin:0 auto; background:white; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);\">\n    <div style=\"background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:32px; color:white; text-align:center;\">\n      <div style=\"font-size:28px; font-weight:bold;\">💳 AI Credit Scoring</div>\n      <div style=\"opacity:0.9; margin-top:4px;\">Kết quả chấm điểm tín dụng của bạn</div>\n    </div>\n    <div style=\"padding:32px;\">\n      <p style=\"font-size:16px; color:#333;\">Xin chào <b>${b.customer_name || 'Bạn'}</b>,</p>\n      <p style=\"color:#555;\">Chúng tôi đã hoàn tất phân tích thông tin tài chính của bạn. Dưới đây là kết quả:</p>\n      <div style=\"text-align:center; margin:32px 0;\">\n        <div style=\"font-size:84px; font-weight:bold; color:${color}; line-height:1;\">${score}</div>\n        <div style=\"display:inline-block; margin-top:12px; padding:10px 28px; background:${color}; color:white; border-radius:24px; font-weight:bold; font-size:18px;\">${b.rating}</div>\n        <div style=\"color:#999; font-size:13px; margin-top:8px;\">Thang FICO: 300 – 850</div>\n      </div>\n      <div style=\"background:#f9f9f9; border-radius:8px; padding:20px; margin-top:16px;\">\n        <div style=\"font-weight:bold; color:#333; margin-bottom:12px;\">Phân tích xác suất theo nhóm:</div>\n        <div style=\"display:flex; justify-content:space-between; margin:8px 0;\"><span style=\"color:#d9534f;\">● Poor</span><b>${pct(b.proba.Poor)}%</b></div>\n        <div style=\"display:flex; justify-content:space-between; margin:8px 0;\"><span style=\"color:#6c8ebf;\">● Standard</span><b>${pct(b.proba.Standard)}%</b></div>\n        <div style=\"display:flex; justify-content:space-between; margin:8px 0;\"><span style=\"color:#5cb85c;\">● Good</span><b>${pct(b.proba.Good)}%</b></div>\n      </div>\n      <div style=\"margin-top:24px;\">\n        <div style=\"font-weight:bold; color:#333; margin-bottom:8px;\">💡 Gợi ý cải thiện:</div>\n        <ul style=\"color:#555; padding-left:20px;\">${tipsHTML}</ul>\n      </div>\n      <div style=\"border-top:1px solid #eee; margin-top:32px; padding-top:20px; font-size:12px; color:#999; text-align:center;\">\n        Email tự động từ hệ thống <b>AI Credit Scoring</b><br/>\n        Đồ án môn Công nghệ dịch vụ tài chính<br/>\n        Kết quả chỉ mang tính minh họa học tập, không dùng cho quyết định tín dụng thực tế.\n      </div>\n    </div>\n  </div>\n</body></html>`;\n\nreturn { json: { emailHTML: html, subject: `Điểm tín dụng của bạn: ${score} (${b.rating})` } };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "id": "code-node",
+      "name": "Build Email HTML"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Webhook').item.json.body.customer_email }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.emailHTML }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1240, 300],
+      "id": "gmail-node",
+      "name": "Send Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Có email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Có email?": {
+      "main": [
+        [
+          {
+            "node": "Build Email HTML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Build Email HTML": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

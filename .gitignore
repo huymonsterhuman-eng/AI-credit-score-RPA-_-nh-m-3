@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model artifacts — cho phép commit model chính (10MB, OK)
+# Chỉ ignore các file backup/experiment lớn
+models/*.joblib
+models/experiments/
+
+# n8n
+n8n/data/
+n8n/.env
+
+# Secrets / credentials
+*.env
+credentials.json
+token.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output
+*.log
