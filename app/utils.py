@@ -1,14 +1,27 @@
-"""Hàm dùng lại cho Streamlit app: load model, build input, predict, convert FICO."""
+"""Hàm dùng lại cho Streamlit app: load model, build input, predict, SHAP."""
 
 import json
 from functools import lru_cache
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import joblib
 
-from config import FEATURES_PATH, FICO_BINS, MODEL_PATH
+from config import FEATURES_PATH, MODEL_PATH
+
+
+# Màu cho 3 nhãn phân loại
+CLASS_COLORS = {
+    'Poor': '#d9534f',
+    'Standard': '#f0ad4e',
+    'Good': '#5cb85c',
+}
+
+CLASS_LABELS_VI = {
+    'Poor': 'Kém',
+    'Standard': 'Trung bình',
+    'Good': 'Tốt',
+}
 
 
 @lru_cache(maxsize=1)
@@ -28,14 +41,7 @@ def load_artifacts():
 def build_input_row(user_inputs: dict, schema: dict) -> pd.DataFrame:
     """
     Xây DataFrame 1 dòng có đúng cột model expect.
-    User chỉ nhập current-month values. Temporal features được auto-fill:
-      - _lag1 = current value (giả định tháng trước giống hệt)
-      - _delta1 = 0
-      - _roll_mean3 = current value
-      - _roll_std3 = 0
-      - delay_streak_prev = 0
-      - debt_trend_prev = 0
-    Nếu user_inputs đã có key ứng với temporal feature, giá trị đó được giữ.
+    User chỉ nhập current-month values. Temporal features được auto-fill.
     """
     row = {}
     for col in schema['input_columns']:
@@ -63,15 +69,12 @@ def build_input_row(user_inputs: dict, schema: dict) -> pd.DataFrame:
 
 
 def predict(user_inputs: dict) -> dict:
-    """Chạy model và trả về dict đầy đủ kết quả."""
+    """Chạy model và trả về dict phân loại + xác suất."""
     model, schema = load_artifacts()
     X = build_input_row(user_inputs, schema)
     proba = model.predict_proba(X)[0]  # [P_poor, P_standard, P_good]
     hard_class_idx = int(np.argmax(proba))
     hard_class = schema['target_order'][hard_class_idx]
-
-    fico = proba_to_fico(proba)
-    rating, color = fico_to_rating(fico)
 
     return {
         'proba': {
@@ -80,43 +83,28 @@ def predict(user_inputs: dict) -> dict:
             'Good': float(proba[2]),
         },
         'predicted_class': hard_class,
-        'fico_score': float(fico),
-        'rating': rating,
-        'rating_color': color,
+        'predicted_class_vi': CLASS_LABELS_VI.get(hard_class, hard_class),
+        'confidence': float(proba[hard_class_idx]),
+        'color': CLASS_COLORS.get(hard_class, '#666'),
         'input_row': X,
     }
 
 
-FICO_ANCHORS = (400.0, 620.0, 830.0)  # Poor, Standard, Good anchors
-
-
-def proba_to_fico(proba: np.ndarray) -> float:
-    """proba theo thứ tự [Poor, Standard, Good] → FICO 300-850.
-    Dùng weighted anchor để tránh nghịch lý argmax=Standard nhưng FICO=Poor.
-    """
-    return float(np.dot(proba, FICO_ANCHORS))
-
-
-def fico_to_rating(score: float) -> tuple[str, str]:
-    """Trả về (rating_label, hex_color)."""
-    for lo, hi, label, color in FICO_BINS:
-        if lo <= score < hi:
-            return label, color
-    return FICO_BINS[-1][2], FICO_BINS[-1][3]
-
-
 def suggestions_for(result: dict, user_inputs: dict) -> list[str]:
-    """Sinh gợi ý cải thiện đơn giản dựa trên score và một số feature."""
+    """Sinh gợi ý cải thiện dựa trên class dự đoán và feature."""
     tips = []
-    score = result['fico_score']
-    if score < 580:
-        tips.append('⚠️ Điểm tín dụng thấp — hầu hết ngân hàng sẽ từ chối hoặc đưa lãi suất cao.')
-    elif score < 670:
-        tips.append('Điểm ở mức Fair — có thể được duyệt nhưng lãi suất chưa tối ưu.')
+    cls = result['predicted_class']
+
+    if cls == 'Poor':
+        tips.append('⚠️ Nhóm tín dụng Kém — hầu hết ngân hàng sẽ từ chối hoặc đưa lãi suất cao.')
+    elif cls == 'Standard':
+        tips.append('Nhóm tín dụng Trung bình — có thể được duyệt nhưng lãi suất chưa tối ưu.')
+    else:
+        tips.append('✅ Nhóm tín dụng Tốt — đủ điều kiện vay với lãi suất ưu đãi.')
 
     dti = user_inputs.get('Debt_to_Income_Annual')
     if dti is not None and dti > 0.4:
-        tips.append(f'Tỷ lệ nợ trên thu nhập năm là {dti:.1%} — nên giảm dưới 40% để cải thiện điểm.')
+        tips.append(f'Tỷ lệ nợ trên thu nhập năm là {dti:.1%} — nên giảm dưới 40% để cải thiện.')
 
     delay = user_inputs.get('Delay_from_due_date')
     if delay is not None and delay > 10:
@@ -124,14 +112,14 @@ def suggestions_for(result: dict, user_inputs: dict) -> list[str]:
 
     util = user_inputs.get('Credit_Utilization_Ratio')
     if util is not None and util > 60:
-        tips.append(f'Tỷ lệ sử dụng tín dụng {util:.0f}% — nên giữ dưới 30% để tối ưu điểm.')
+        tips.append(f'Tỷ lệ sử dụng tín dụng {util:.0f}% — nên giữ dưới 30% để tối ưu.')
 
     inquiries = user_inputs.get('Num_Credit_Inquiries')
     if inquiries is not None and inquiries > 5:
         tips.append('Số lần bị tra cứu tín dụng cao — hạn chế mở thẻ/vay mới trong 6 tháng tới.')
 
-    if not tips:
-        tips.append('✅ Hồ sơ tài chính tốt, tiếp tục duy trì thói quen hiện tại.')
+    if len(tips) == 1 and cls == 'Good':
+        tips.append('Tiếp tục duy trì thói quen tài chính hiện tại.')
     return tips
 
 
@@ -202,7 +190,6 @@ def get_shap_values(user_inputs: dict, top_n: int = 8) -> pd.DataFrame | None:
     model, schema = load_artifacts()
     X = build_input_row(user_inputs, schema)
 
-    # Model là Pipeline: preprocessor + classifier
     pre = model.named_steps['pre']
     clf = model.named_steps['model']
 
@@ -223,7 +210,6 @@ def get_shap_values(user_inputs: dict, top_n: int = 8) -> pd.DataFrame | None:
         'feature': [clean_feature_name(f) for f in feat_names],
         'shap_value': sv,
     })
-    # Loại các feature không actionable (user không control được)
     hidden_keywords = ('month_idx', 'Tháng ghi nhận')
     df = df[~df['feature'].str.contains('|'.join(hidden_keywords), regex=True)]
     df = df[~df['feature_raw'].str.contains('month_idx')]
@@ -233,19 +219,15 @@ def get_shap_values(user_inputs: dict, top_n: int = 8) -> pd.DataFrame | None:
 
 
 def derive_behavior(user_inputs: dict) -> tuple[str, str]:
-    """Suy ra Spending_Level & Payment_Value từ số liệu tài chính của user.
-    Tránh dropdown chủ quan.
-    """
+    """Suy ra Spending_Level & Payment_Value từ số liệu tài chính của user."""
     salary = max(user_inputs.get('Monthly_Inhand_Salary', 1), 1)
     emi = user_inputs.get('Total_EMI_per_month', 0)
     invested = user_inputs.get('Amount_invested_monthly', 0)
     debt = user_inputs.get('Outstanding_Debt', 0)
 
-    # Spending level = tỷ lệ nghĩa vụ tài chính / lương
-    spending_ratio = (emi + debt * 0.02) / salary  # 0.02: giả định 2% nợ trả mỗi tháng
+    spending_ratio = (emi + debt * 0.02) / salary
     spending_level = 'High' if spending_ratio > 0.5 else 'Low'
 
-    # Payment value = mức độ giao dịch (đầu tư + EMI) so với lương
     payment_ratio = (emi + invested) / salary
     if payment_ratio < 0.2:
         payment_value = 'Small'

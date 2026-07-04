@@ -1,4 +1,4 @@
-"""Streamlit app cho AI Credit Scoring."""
+"""Streamlit app cho AI Credit Classification."""
 
 from datetime import datetime
 
@@ -7,10 +7,10 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-from config import (APP_SUBTITLE, APP_TITLE, DISCLAIMER, FICO_BINS,
+from config import (APP_SUBTITLE, APP_TITLE, DISCLAIMER,
                      N8N_WEBHOOK_URL, WEBHOOK_TIMEOUT)
-from utils import (FICO_ANCHORS, derive_behavior, get_shap_values,
-                    load_artifacts, predict, suggestions_for)
+from utils import (CLASS_COLORS, CLASS_LABELS_VI, derive_behavior,
+                    get_shap_values, load_artifacts, predict, suggestions_for)
 
 
 st.set_page_config(page_title=APP_TITLE, page_icon='💳', layout='wide')
@@ -40,10 +40,10 @@ with st.sidebar:
 
 
 # ============ Header ============
-st.title('Credit Scoring — Chấm điểm tín dụng cá nhân')
+st.title('Credit Classification — Phân loại mức tín dụng cá nhân')
 st.write(
-    'Nhập thông tin bên dưới để nhận điểm tín dụng dự đoán, phân loại theo thang FICO '
-    'và gợi ý cải thiện.'
+    'Nhập thông tin bên dưới để nhận kết quả phân loại tín dụng (Poor / Standard / Good) '
+    'kèm gợi ý cải thiện.'
 )
 
 # ============ Presets & Session State ============
@@ -90,19 +90,6 @@ PRESETS = {
         'Has_Mortgage_Loan': True, 'Has_Student_Loan': False,
         'Has_Payday_Loan': False,
     },
-    'Exceptional': {
-        'Age': 48, 'Occupation_vi': 'Bác sĩ', 'Credit_History_Months': 240,
-        'Annual_Income': 150000.0, 'Monthly_Inhand_Salary': 11500.0, 'Monthly_Balance': 3500.0,
-        'Total_EMI_per_month': 50.0, 'Amount_invested_monthly': 2500.0,
-        'Payment_of_Min_Amount_vi': 'Không',
-        'Num_Bank_Accounts': 4, 'Num_Credit_Card': 2, 'Num_of_Loan': 1,
-        'Interest_Rate': 5, 'Outstanding_Debt': 100.0, 'Credit_Utilization_Ratio': 5.0,
-        'Delay_from_due_date': 0, 'Num_of_Delayed_Payment': 0, 'Num_Credit_Inquiries': 0,
-        'Credit_Mix': 'Good', 'Changed_Credit_Limit': 2.0,
-        'Has_Credit_Builder_Loan': False, 'Has_Home_Equity_Loan': True,
-        'Has_Mortgage_Loan': False, 'Has_Student_Loan': False,
-        'Has_Payday_Loan': False,
-    },
 }
 
 # Init session state với default
@@ -121,16 +108,14 @@ def reset_form():
 
 
 st.markdown('##### ⚡ Load nhanh case demo')
-pc1, pc2, pc3, pc4, pc5 = st.columns(5)
-pc1.button('🔴 Poor', on_click=apply_preset, args=('Poor',),
-            use_container_width=True, help='Load case điểm tín dụng thấp')
-pc2.button('🟠 Standard', on_click=apply_preset, args=('Standard',),
-            use_container_width=True, help='Load case điểm tín dụng trung bình')
-pc3.button('🟢 Good', on_click=apply_preset, args=('Good',),
-            use_container_width=True, help='Load case điểm tín dụng tốt')
-pc4.button('💚 Exceptional', on_click=apply_preset, args=('Exceptional',),
-            use_container_width=True, help='Load case điểm tín dụng xuất sắc')
-pc5.button('🔄 Reset', on_click=reset_form,
+pc1, pc2, pc3, pc4 = st.columns(4)
+pc1.button('🔴 Kém (Poor)', on_click=apply_preset, args=('Poor',),
+            use_container_width=True, help='Load case tín dụng kém')
+pc2.button('🟠 Trung bình (Standard)', on_click=apply_preset, args=('Standard',),
+            use_container_width=True, help='Load case tín dụng trung bình')
+pc3.button('🟢 Tốt (Good)', on_click=apply_preset, args=('Good',),
+            use_container_width=True, help='Load case tín dụng tốt')
+pc4.button('🔄 Reset', on_click=reset_form,
             use_container_width=True, help='Trở về giá trị mặc định')
 st.markdown('---')
 
@@ -291,41 +276,37 @@ if submitted:
     st.success('Dự đoán hoàn tất.')
     st.markdown('---')
 
-    # ---- Kết quả chính (tối giản cho end-user) ----
-    c1, c2, c3 = st.columns([1, 1, 2])
+    # ---- Kết quả chính ----
+    c1, c2 = st.columns([1, 2])
     with c1:
-        st.metric('FICO Score', f"{result['fico_score']:.0f}",
-                    help='Điểm tín dụng theo thang FICO chuẩn 300-850, dùng cho quyết định tín dụng.')
-    with c2:
         st.markdown(
-            f"<div style='padding:20px;border-radius:8px;background:{result['rating_color']};"
-            f"color:white;text-align:center;font-size:22px;font-weight:bold'>"
-            f"{result['rating']}</div>",
+            f"<div style='padding:32px 20px; border-radius:12px; "
+            f"background:{result['color']}; color:white; text-align:center;'>"
+            f"<div style='font-size:14px; opacity:0.9;'>Nhóm phân loại</div>"
+            f"<div style='font-size:42px; font-weight:bold; margin-top:8px;'>"
+            f"{result['predicted_class_vi']}</div>"
+            f"<div style='font-size:16px; opacity:0.95; margin-top:4px;'>"
+            f"({result['predicted_class']})</div>"
+            f"<div style='font-size:13px; margin-top:12px; opacity:0.9;'>"
+            f"Độ tin cậy: {result['confidence']*100:.1f}%</div>"
+            f"</div>",
             unsafe_allow_html=True
         )
-    with c3:
-        def hex_to_rgba(hex_color, alpha=0.25):
-            h = hex_color.lstrip('#')
-            r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-            return f'rgba({r},{g},{b},{alpha})'
-
-        fig = go.Figure(go.Indicator(
-            mode='gauge+number',
-            value=result['fico_score'],
-            domain={'x': [0, 1], 'y': [0, 1]},
-            gauge={
-                'axis': {'range': [300, 850]},
-                'bar': {'color': result['rating_color']},
-                'steps': [
-                    {'range': [lo, hi], 'color': hex_to_rgba(color)}
-                    for lo, hi, _, color in FICO_BINS
-                ],
-                'threshold': {'line': {'color': 'black', 'width': 3},
-                              'value': result['fico_score']}
-            }
+    with c2:
+        st.subheader('Xác suất theo từng nhóm')
+        proba_df = pd.DataFrame({
+            'Nhóm': list(result['proba'].keys()),
+            'Xác suất': list(result['proba'].values())
+        })
+        fig2 = go.Figure(go.Bar(
+            x=proba_df['Nhóm'], y=proba_df['Xác suất'],
+            marker_color=[CLASS_COLORS[c] for c in proba_df['Nhóm']],
+            text=[f'{p:.1%}' for p in proba_df['Xác suất']], textposition='outside'
         ))
-        fig.update_layout(height=200, margin=dict(l=20, r=20, t=20, b=20))
-        st.plotly_chart(fig, use_container_width=True)
+        fig2.update_layout(yaxis=dict(range=[0, 1], tickformat='.0%'),
+                            height=280, margin=dict(l=20, r=20, t=20, b=20),
+                            showlegend=False)
+        st.plotly_chart(fig2, use_container_width=True)
 
     # ---- Gợi ý (main view) ----
     st.subheader('💡 Gợi ý cải thiện')
@@ -334,79 +315,9 @@ if submitted:
 
     st.markdown('---')
 
-    # ---- Expander: chi tiết kỹ thuật (progressive disclosure) ----
-    with st.expander('🔬 Chi tiết kỹ thuật — Điểm này được tính thế nào?',
+    # ---- Expander: chi tiết kỹ thuật ----
+    with st.expander('🔬 Chi tiết kỹ thuật — Yếu tố ảnh hưởng đến kết quả',
                        expanded=False):
-
-        # === 1. Contribution chart ===
-        st.markdown('#### 📊 Cách tính điểm FICO')
-        st.caption(
-            'Điểm FICO là **tổng đóng góp** từ 3 nhóm phân loại của mô hình. '
-            'Mỗi nhóm có điểm neo (anchor) riêng, được nhân với xác suất tương ứng.'
-        )
-        anchor_poor, anchor_std, anchor_good = FICO_ANCHORS
-        p_poor = result['proba']['Poor']
-        p_std = result['proba']['Standard']
-        p_good = result['proba']['Good']
-        contrib_poor = p_poor * anchor_poor
-        contrib_std = p_std * anchor_std
-        contrib_good = p_good * anchor_good
-        total_score = contrib_poor + contrib_std + contrib_good
-
-        fig_contrib = go.Figure()
-        fig_contrib.add_trace(go.Bar(
-            y=['FICO Score'], x=[contrib_poor], name='Nhóm Poor',
-            orientation='h', marker_color='#d9534f',
-            text=f'{contrib_poor:.0f} điểm<br>({p_poor*100:.1f}% × {anchor_poor:.0f})',
-            textposition='inside', hovertemplate='%{text}<extra></extra>'
-        ))
-        fig_contrib.add_trace(go.Bar(
-            y=['FICO Score'], x=[contrib_std], name='Nhóm Standard',
-            orientation='h', marker_color='#6c8ebf',
-            text=f'{contrib_std:.0f} điểm<br>({p_std*100:.1f}% × {anchor_std:.0f})',
-            textposition='inside', hovertemplate='%{text}<extra></extra>'
-        ))
-        fig_contrib.add_trace(go.Bar(
-            y=['FICO Score'], x=[contrib_good], name='Nhóm Good',
-            orientation='h', marker_color='#5cb85c',
-            text=f'{contrib_good:.0f} điểm<br>({p_good*100:.1f}% × {anchor_good:.0f})',
-            textposition='inside', hovertemplate='%{text}<extra></extra>'
-        ))
-        fig_contrib.update_layout(
-            barmode='stack', height=180,
-            margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(range=[0, 850], title='Điểm đóng góp'),
-            legend=dict(orientation='h', y=-0.3),
-            showlegend=True,
-        )
-        st.plotly_chart(fig_contrib, use_container_width=True)
-        st.info(
-            f'**Công thức:** FICO = {contrib_poor:.0f} + {contrib_std:.0f} + '
-            f'{contrib_good:.0f} = **{total_score:.0f}**'
-        )
-
-        # === 2. Model confidence (probability breakdown) ===
-        st.markdown('#### 🎯 Mức độ tin cậy của mô hình')
-        st.caption(
-            'Model dự đoán khách hàng có bao nhiêu **khả năng** thuộc từng nhóm. '
-            'Đây KHÔNG phải kết quả cuối — điểm FICO đã tổng hợp từ 3 số này.'
-        )
-        proba_df = pd.DataFrame({
-            'Nhóm': list(result['proba'].keys()),
-            'Xác suất': list(result['proba'].values())
-        })
-        fig2 = go.Figure(go.Bar(
-            x=proba_df['Nhóm'], y=proba_df['Xác suất'],
-            marker_color=['#d9534f', '#6c8ebf', '#5cb85c'],
-            text=[f'{p:.1%}' for p in proba_df['Xác suất']], textposition='outside'
-        ))
-        fig2.update_layout(yaxis=dict(range=[0, 1], tickformat='.0%'),
-                            height=260, margin=dict(l=20, r=20, t=20, b=20),
-                            showlegend=False)
-        st.plotly_chart(fig2, use_container_width=True)
-
-        # === 3. SHAP ===
-        st.markdown('#### 🔍 Yếu tố nào ảnh hưởng đến điểm của bạn?')
         with st.spinner('Đang phân tích...'):
             shap_df = get_shap_values(user_inputs, top_n=10)
         if shap_df is not None:
@@ -464,9 +375,9 @@ if submitted:
             'timestamp': datetime.now().isoformat(),
             'customer_name': customer_name or 'Ẩn danh',
             'customer_email': customer_email or '',
-            'fico_score': round(float(result['fico_score']), 1),
-            'rating': result['rating'],
             'predicted_class': result['predicted_class'],
+            'predicted_class_vi': result['predicted_class_vi'],
+            'confidence': round(float(result['confidence']), 4),
             'proba': {k: round(float(v), 4) for k, v in result['proba'].items()},
             'inputs': {k: to_native(v) for k, v in user_inputs.items()},
         }
