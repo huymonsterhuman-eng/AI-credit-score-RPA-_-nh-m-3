@@ -64,14 +64,14 @@ DEFAULTS = {
 
 PRESETS = {
     'Poor': {
-        'Age': 22, 'Occupation_vi': 'Thợ máy', 'Credit_History_Months': 6,
-        'Annual_Income': 14000.0, 'Monthly_Inhand_Salary': 1100.0, 'Monthly_Balance': 30.0,
-        'Total_EMI_per_month': 650.0, 'Amount_invested_monthly': 0.0,
+        'Age': 19, 'Occupation_vi': 'Thợ máy', 'Credit_History_Months': 3,
+        'Annual_Income': 9000.0, 'Monthly_Inhand_Salary': 700.0, 'Monthly_Balance': 5.0,
+        'Total_EMI_per_month': 800.0, 'Amount_invested_monthly': 0.0,
         'Payment_of_Min_Amount_vi': 'Có',
-        'Num_Bank_Accounts': 1, 'Num_Credit_Card': 8, 'Num_of_Loan': 8,
-        'Interest_Rate': 32, 'Outstanding_Debt': 12000.0, 'Credit_Utilization_Ratio': 96.0,
-        'Delay_from_due_date': 45, 'Num_of_Delayed_Payment': 28, 'Num_Credit_Inquiries': 15,
-        'Credit_Mix': 'Bad', 'Changed_Credit_Limit': 22.0,
+        'Num_Bank_Accounts': 0, 'Num_Credit_Card': 10, 'Num_of_Loan': 10,
+        'Interest_Rate': 40, 'Outstanding_Debt': 20000.0, 'Credit_Utilization_Ratio': 100.0,
+        'Delay_from_due_date': 60, 'Num_of_Delayed_Payment': 50, 'Num_Credit_Inquiries': 25,
+        'Credit_Mix': 'Bad', 'Changed_Credit_Limit': 30.0,
         'Has_Credit_Builder_Loan': False, 'Has_Home_Equity_Loan': False,
         'Has_Mortgage_Loan': False, 'Has_Student_Loan': False,
         'Has_Payday_Loan': True,
@@ -377,7 +377,6 @@ if submitted:
             'customer_email': customer_email or '',
             'predicted_class': result['predicted_class'],
             'predicted_class_vi': result['predicted_class_vi'],
-            'confidence': round(float(result['confidence']), 4),
             'proba': {k: round(float(v), 4) for k, v in result['proba'].items()},
             'inputs': {k: to_native(v) for k, v in user_inputs.items()},
         }

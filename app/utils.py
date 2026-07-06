@@ -252,7 +252,16 @@ def load_sheet_data() -> pd.DataFrame:
     )
     gc = gspread.authorize(creds)
     sh = gc.open_by_key(GOOGLE_SHEET_ID)
-    ws = sh.worksheet(SHEET_NAME) if SHEET_NAME else sh.sheet1
+
+    # Try named tab; fallback to first tab if not found (tab name có thể khác nhau
+    # trên account tiếng Anh vs tiếng Việt: 'Sheet1' vs 'Trang tính1')
+    if SHEET_NAME:
+        try:
+            ws = sh.worksheet(SHEET_NAME)
+        except gspread.WorksheetNotFound:
+            ws = sh.sheet1
+    else:
+        ws = sh.sheet1
 
     records = ws.get_all_records()
     df = pd.DataFrame(records)
@@ -264,10 +273,15 @@ def load_sheet_data() -> pd.DataFrame:
     if 'Thời gian' in df.columns:
         df['Thời gian'] = pd.to_datetime(df['Thời gian'], errors='coerce')
 
-    # Parse xác suất về float
+    # Parse xác suất về float [0, 1]
     for col in ('Xác suất Poor', 'Xác suất Standard', 'Xác suất Good'):
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
+            df[col] = pd.to_numeric(
+                df[col].astype(str).str.replace(',', '.'),  # Vietnamese decimal
+                errors='coerce'
+            ).astype(float)  # force float64 để tránh conflict khi chia 100
+            # Normalize: nếu value > 1 → chia 100 (Sheet lưu 30.24 thay vì 0.3024)
+            df[col] = df[col].where(df[col] <= 1, df[col] / 100)
 
     return df.sort_values('Thời gian', ascending=False) if 'Thời gian' in df.columns else df
 

@@ -79,7 +79,13 @@ def show_dashboard():
         )
         return
     except Exception as e:
-        st.error(f'Lỗi khi đọc Google Sheet: {e}')
+        st.error(f'Lỗi khi đọc Google Sheet: **{type(e).__name__}** — {e}')
+        st.info(
+            'Các nguyên nhân phổ biến:\n'
+            '- Chưa share Sheet với email service account (email có dạng `xxx@yyy.iam.gserviceaccount.com`)\n'
+            '- Tab name không đúng — thử đổi `SHEET_NAME` trong config.py (hiện: `Sheet1`)\n'
+            '- Sheet ID trong config.py không khớp với Sheet thật'
+        )
         return
 
     if df.empty:
@@ -114,7 +120,7 @@ def show_dashboard():
         st.warning('Không có dữ liệu trong khoảng thời gian đã chọn.')
         return
 
-    # ============ KPI Cards ============
+    # ============ KPI Cards — Hàng 1: Phân loại ============
     st.markdown('### 📈 Chỉ số tổng quan')
     total = len(dff)
     class_col = 'Nhóm dự đoán' if 'Nhóm dự đoán' in dff.columns else None
@@ -131,6 +137,78 @@ def show_dashboard():
                     delta=None, delta_color='inverse')
         k3.metric('Standard', f'{n_std} ({n_std/total*100:.1f}%)')
         k4.metric('Good', f'{n_good} ({n_good/total*100:.1f}%)')
+
+    # ============ KPI Cards — Hàng 2: Engagement ============
+    m1, m2, m3, m4 = st.columns(4)
+
+    # Trung bình lượt/ngày
+    if 'Thời gian' in dff.columns:
+        n_days = max((dff['Thời gian'].dt.date.max() - dff['Thời gian'].dt.date.min()).days + 1, 1)
+        avg_per_day = total / n_days
+        m1.metric('TB lượt/ngày', f'{avg_per_day:.1f}',
+                    help=f'{total} lượt / {n_days} ngày')
+
+    # Số lượt có email vs không
+    if 'Email' in dff.columns:
+        has_email = dff['Email'].astype(str).str.strip().str.len() > 0
+        has_email &= dff['Email'].astype(str).str.contains('@', na=False)
+        n_with = int(has_email.sum())
+        n_without = total - n_with
+        m2.metric('Có email', f'{n_with} ({n_with/total*100:.0f}%)')
+        m3.metric('Không có email', f'{n_without} ({n_without/total*100:.0f}%)')
+
+        # Repeat rate — khách xuất hiện ≥ 2 lần
+        emails_valid = dff[has_email]['Email'].astype(str).str.strip().str.lower()
+        if len(emails_valid) > 0:
+            email_counts = emails_valid.value_counts()
+            repeat_customers = int((email_counts >= 2).sum())
+            unique_customers = int(email_counts.nunique())
+            repeat_rate = repeat_customers / unique_customers * 100 if unique_customers else 0
+            m4.metric(
+                'Tỷ lệ khách quay lại',
+                f'{repeat_rate:.1f}%',
+                help=f'{repeat_customers} khách quay lại / {unique_customers} khách có email',
+            )
+        else:
+            m4.metric('Tỷ lệ khách quay lại', '—')
+
+    # ============ Chart: Phân bố số lần tra cứu / khách ============
+    if 'Email' in dff.columns:
+        has_email = dff['Email'].astype(str).str.strip().str.len() > 0
+        has_email &= dff['Email'].astype(str).str.contains('@', na=False)
+        emails_valid = dff[has_email]['Email'].astype(str).str.strip().str.lower()
+
+        if len(emails_valid) > 0:
+            st.markdown('### 🔁 Phân bố số lần tra cứu của mỗi khách')
+            email_counts = emails_valid.value_counts()
+
+            # Bin số lần
+            def bin_label(n):
+                if n == 1: return '1 lần'
+                if n == 2: return '2 lần'
+                if n == 3: return '3 lần'
+                if n <= 5: return '4-5 lần'
+                return '6+ lần'
+
+            binned = email_counts.apply(bin_label).value_counts()
+            order = ['1 lần', '2 lần', '3 lần', '4-5 lần', '6+ lần']
+            binned = binned.reindex([o for o in order if o in binned.index])
+
+            fig_hist = go.Figure(go.Bar(
+                x=binned.index, y=binned.values,
+                marker_color='#667eea',
+                text=binned.values, textposition='outside',
+            ))
+            fig_hist.update_layout(
+                height=280, margin=dict(l=20, r=20, t=20, b=20),
+                xaxis_title='Số lần tra cứu', yaxis_title='Số khách hàng',
+                showlegend=False,
+            )
+            st.plotly_chart(fig_hist, use_container_width=True)
+            st.caption(
+                f'Tổng: **{len(email_counts)} khách hàng có email** với '
+                f'trung bình **{email_counts.mean():.1f} lượt/khách**.'
+            )
 
     # ============ Chart 1: Trend theo ngày ============
     st.markdown('### 📅 Lượt tra cứu theo ngày')
@@ -159,41 +237,66 @@ def show_dashboard():
                             showlegend=False)
         st.plotly_chart(fig2, use_container_width=True)
 
-    # ============ Section: Case Poor cần review ============
-    st.markdown('### ⚠️ Case Poor cần review')
-    if class_col and 'Xác suất Poor' in dff.columns:
-        confidence_threshold = st.slider(
-            'Ngưỡng xác suất Poor tối thiểu (%)',
-            0, 100, 60, step=5,
-            help='Chỉ hiển thị case có xác suất Poor ≥ ngưỡng này'
-        ) / 100
+    # ============ Section: Case cần review (sort by P(Poor)) ============
+    st.markdown('### ⚠️ Case cần review — sắp xếp theo rủi ro cao nhất')
+    if 'Xác suất Poor' in dff.columns:
+        # Tổng số case
+        total_review = len(dff)
+        n_poor_class = int((dff[class_col] == 'Poor').sum()) if class_col else 0
+        st.caption(
+            f'Tổng: **{total_review} lượt** tra cứu · '
+            f'Trong đó **{n_poor_class} case** được model phân loại là Poor.'
+        )
 
-        poor_cases = dff[
-            (dff[class_col] == 'Poor') &
-            (dff['Xác suất Poor'] >= confidence_threshold)
-        ].copy()
+        # Filter mode
+        mode = st.radio(
+            'Bộ lọc',
+            ['Tất cả case (sort theo P(Poor) giảm dần)',
+             'Chỉ case phân loại Poor',
+             'Case có P(Poor) ≥ ngưỡng'],
+            horizontal=True,
+        )
 
-        if not poor_cases.empty:
+        review_df = dff.copy()
+        if mode == 'Chỉ case phân loại Poor' and class_col:
+            review_df = review_df[review_df[class_col] == 'Poor']
+        elif mode.startswith('Case có P(Poor)'):
+            threshold = st.slider(
+                'Ngưỡng P(Poor) tối thiểu (%)',
+                0, 100, 30, step=5,
+            ) / 100
+            review_df = review_df[review_df['Xác suất Poor'] >= threshold]
+
+        review_df = review_df.sort_values('Xác suất Poor', ascending=False)
+
+        if not review_df.empty:
             display_cols = [c for c in
-                            ['Thời gian', 'Họ tên', 'Email', 'Xác suất Poor', 'Ghi chú']
-                            if c in poor_cases.columns]
+                            ['Thời gian', 'Họ tên', 'Email', class_col,
+                             'Xác suất Poor', 'Ghi chú']
+                            if c and c in review_df.columns]
+
+            col_config = {}
+            if 'Xác suất Poor' in display_cols:
+                col_config['Xác suất Poor'] = st.column_config.ProgressColumn(
+                    'Xác suất Poor', min_value=0, max_value=1, format='%.1f%%',
+                )
+            if 'Thời gian' in display_cols:
+                col_config['Thời gian'] = st.column_config.DatetimeColumn(
+                    'Thời gian', format='DD/MM/YYYY HH:mm',
+                )
+
             st.dataframe(
-                poor_cases[display_cols].reset_index(drop=True),
+                review_df[display_cols].reset_index(drop=True),
                 use_container_width=True,
                 hide_index=True,
-                column_config={
-                    'Xác suất Poor': st.column_config.ProgressColumn(
-                        'Xác suất Poor', min_value=0, max_value=1,
-                        format='%.1f%%',
-                    ),
-                    'Thời gian': st.column_config.DatetimeColumn(
-                        'Thời gian', format='DD/MM/YYYY HH:mm'
-                    ),
-                }
+                column_config=col_config,
+                height=min(400, 50 + 35 * min(len(review_df), 10)),
             )
-            st.caption(f'Tìm thấy **{len(poor_cases)} case** cần review (ngưỡng {confidence_threshold*100:.0f}%).')
+            st.caption(f'Hiển thị **{len(review_df)} case**.')
         else:
-            st.success('✅ Không có case Poor nào vượt ngưỡng — hệ thống trong tình trạng bình thường.')
+            st.info('Không có case nào khớp bộ lọc.')
+    else:
+        st.info('Sheet chưa có cột "Xác suất Poor" — không hiển thị section này được.')
 
     # ============ Section: Search theo email ============
     st.markdown('### 🔍 Tra cứu lịch sử khách hàng')
