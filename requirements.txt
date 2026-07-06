@@ -23,3 +23,7 @@ streamlit-shap>=1.0
 
 # HTTP (gọi webhook n8n)
 requests>=2.31
+
+# Admin dashboard — đọc Google Sheet
+gspread>=6.0
+google-auth>=2.0

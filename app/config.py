@@ -20,3 +20,9 @@ DISCLAIMER = (
 
 APP_TITLE = 'AI Credit Classification'
 APP_SUBTITLE = 'Phân loại mức tín dụng cá nhân dựa trên Machine Learning'
+
+# ============ Admin Dashboard ============
+ADMIN_PASSWORD = 'admin123'  # ĐỔI trước khi demo/production
+GOOGLE_SHEET_ID = '1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM'
+SERVICE_ACCOUNT_PATH = PROJECT_ROOT / 'models' / 'service_account.json'
+SHEET_NAME = 'Sheet1'  # tab name trong workbook (thường là 'Sheet1' hoặc 'Trang tính1')

@@ -1,4 +1,4 @@
-"""Hàm dùng lại cho Streamlit app: load model, build input, predict, SHAP."""
+"""Hàm dùng lại cho Streamlit app: load model, build input, predict, SHAP, admin dashboard."""
 
 import json
 from functools import lru_cache
@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import joblib
 
-from config import FEATURES_PATH, MODEL_PATH
+from config import (ADMIN_PASSWORD, FEATURES_PATH, GOOGLE_SHEET_ID, MODEL_PATH,
+                     SERVICE_ACCOUNT_PATH, SHEET_NAME)
 
 
 # Màu cho 3 nhãn phân loại
@@ -216,6 +217,59 @@ def get_shap_values(user_inputs: dict, top_n: int = 8) -> pd.DataFrame | None:
     df['abs_shap'] = df['shap_value'].abs()
     df = df.sort_values('abs_shap', ascending=False).head(top_n)
     return df.drop(columns=['abs_shap']).reset_index(drop=True)
+
+
+# ============ Admin Dashboard helpers ============
+
+def check_admin_password(input_password: str) -> bool:
+    """So sánh với ADMIN_PASSWORD trong config."""
+    return input_password == ADMIN_PASSWORD
+
+
+def load_sheet_data() -> pd.DataFrame:
+    """Đọc toàn bộ Google Sheet qua service account.
+
+    Trả về DataFrame với:
+      - 'Thời gian' → datetime
+      - 'Xác suất Poor/Standard/Good' → float
+      - Các cột khác giữ nguyên string
+    """
+    import gspread
+    from google.oauth2.service_account import Credentials
+
+    if not SERVICE_ACCOUNT_PATH.exists():
+        raise FileNotFoundError(
+            f'Chưa cấu hình service account. Đọc README, tạo credential tại '
+            f'Google Cloud Console và đặt file JSON tại {SERVICE_ACCOUNT_PATH}.'
+        )
+
+    scopes = [
+        'https://www.googleapis.com/auth/spreadsheets.readonly',
+        'https://www.googleapis.com/auth/drive.readonly',
+    ]
+    creds = Credentials.from_service_account_file(
+        str(SERVICE_ACCOUNT_PATH), scopes=scopes
+    )
+    gc = gspread.authorize(creds)
+    sh = gc.open_by_key(GOOGLE_SHEET_ID)
+    ws = sh.worksheet(SHEET_NAME) if SHEET_NAME else sh.sheet1
+
+    records = ws.get_all_records()
+    df = pd.DataFrame(records)
+
+    if df.empty:
+        return df
+
+    # Parse datetime
+    if 'Thời gian' in df.columns:
+        df['Thời gian'] = pd.to_datetime(df['Thời gian'], errors='coerce')
+
+    # Parse xác suất về float
+    for col in ('Xác suất Poor', 'Xác suất Standard', 'Xác suất Good'):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    return df.sort_values('Thời gian', ascending=False) if 'Thời gian' in df.columns else df
 
 
 def derive_behavior(user_inputs: dict) -> tuple[str, str]:
