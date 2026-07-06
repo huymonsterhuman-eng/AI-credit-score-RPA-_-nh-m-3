@@ -64,13 +64,13 @@ DEFAULTS = {
 
 PRESETS = {
     'Poor': {
-        'Age': 19, 'Occupation_vi': 'Thợ máy', 'Credit_History_Months': 3,
+        'Age': 60, 'Occupation_vi': 'Thợ máy', 'Credit_History_Months': 3,
         'Annual_Income': 9000.0, 'Monthly_Inhand_Salary': 700.0, 'Monthly_Balance': 5.0,
         'Total_EMI_per_month': 800.0, 'Amount_invested_monthly': 0.0,
         'Payment_of_Min_Amount_vi': 'Có',
         'Num_Bank_Accounts': 0, 'Num_Credit_Card': 10, 'Num_of_Loan': 10,
-        'Interest_Rate': 40, 'Outstanding_Debt': 20000.0, 'Credit_Utilization_Ratio': 100.0,
-        'Delay_from_due_date': 60, 'Num_of_Delayed_Payment': 50, 'Num_Credit_Inquiries': 25,
+        'Interest_Rate': 40, 'Outstanding_Debt': 50000.0, 'Credit_Utilization_Ratio': 100.0,
+        'Delay_from_due_date': 60, 'Num_of_Delayed_Payment': 50, 'Num_Credit_Inquiries': 30,
         'Credit_Mix': 'Bad', 'Changed_Credit_Limit': 30.0,
         'Has_Credit_Builder_Loan': False, 'Has_Home_Equity_Loan': False,
         'Has_Mortgage_Loan': False, 'Has_Student_Loan': False,
