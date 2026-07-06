@@ -162,7 +162,7 @@ def show_dashboard():
         if len(emails_valid) > 0:
             email_counts = emails_valid.value_counts()
             repeat_customers = int((email_counts >= 2).sum())
-            unique_customers = int(email_counts.nunique())
+            unique_customers = len(email_counts)  # số email unique
             repeat_rate = repeat_customers / unique_customers * 100 if unique_customers else 0
             m4.metric(
                 'Tỷ lệ khách quay lại',
@@ -264,8 +264,16 @@ def show_dashboard():
             threshold = st.slider(
                 'Ngưỡng P(Poor) tối thiểu (%)',
                 0, 100, 30, step=5,
+                help='Kéo slider để filter — table dưới sẽ update ngay',
             ) / 100
             review_df = review_df[review_df['Xác suất Poor'] >= threshold]
+            # Feedback ngay ở đây để user thấy slider hoạt động
+            max_p_poor = dff['Xác suất Poor'].max() * 100
+            st.caption(
+                f'Ngưỡng hiện tại: **{threshold*100:.0f}%** — '
+                f'P(Poor) cao nhất trong dataset: **{max_p_poor:.1f}%**. '
+                f'Tìm thấy **{len(review_df)} case** ≥ ngưỡng.'
+            )
 
         review_df = review_df.sort_values('Xác suất Poor', ascending=False)
 

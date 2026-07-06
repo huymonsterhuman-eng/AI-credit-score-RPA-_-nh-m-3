@@ -96,6 +96,7 @@ def suggestions_for(result: dict, user_inputs: dict) -> list[str]:
     tips = []
     cls = result['predicted_class']
 
+    # ==== Tip 1: Overview theo class model ====
     if cls == 'Poor':
         tips.append('⚠️ Nhóm tín dụng Kém — hầu hết ngân hàng sẽ từ chối hoặc đưa lãi suất cao.')
     elif cls == 'Standard':
@@ -103,22 +104,52 @@ def suggestions_for(result: dict, user_inputs: dict) -> list[str]:
     else:
         tips.append('✅ Nhóm tín dụng Tốt — đủ điều kiện vay với lãi suất ưu đãi.')
 
+    # ==== Tip 2: Debt-to-income ratio ====
     dti = user_inputs.get('Debt_to_Income_Annual')
     if dti is not None and dti > 0.4:
         tips.append(f'Tỷ lệ nợ trên thu nhập năm là {dti:.1%} — nên giảm dưới 40% để cải thiện.')
 
+    # ==== Tip 3: Delay from due date ====
     delay = user_inputs.get('Delay_from_due_date')
     if delay is not None and delay > 10:
-        tips.append('Trả trễ trung bình > 10 ngày — cải thiện thanh toán đúng hạn là yếu tố ảnh hưởng lớn nhất.')
+        tips.append(f'Trả trễ trung bình {delay:.0f} ngày — cải thiện thanh toán đúng hạn là yếu tố ảnh hưởng lớn nhất.')
 
+    # ==== Tip 4: Credit utilization ====
     util = user_inputs.get('Credit_Utilization_Ratio')
     if util is not None and util > 60:
         tips.append(f'Tỷ lệ sử dụng tín dụng {util:.0f}% — nên giữ dưới 30% để tối ưu.')
 
+    # ==== Tip 5: Credit inquiries ====
     inquiries = user_inputs.get('Num_Credit_Inquiries')
     if inquiries is not None and inquiries > 5:
-        tips.append('Số lần bị tra cứu tín dụng cao — hạn chế mở thẻ/vay mới trong 6 tháng tới.')
+        tips.append(f'Số lần bị tra cứu tín dụng ({inquiries}) khá cao — hạn chế mở thẻ/vay mới trong 6 tháng tới.')
 
+    # ==== Tip 6: Số lần trả trễ ====
+    num_delay = user_inputs.get('Num_of_Delayed_Payment')
+    if num_delay is not None and num_delay > 10:
+        tips.append(f'Đã trả trễ {num_delay} lần — con số cao, ngân hàng coi là khách rủi ro. Nên setup autopay để không trễ tiếp.')
+
+    # ==== Tip 7: Credit mix ====
+    credit_mix = user_inputs.get('Credit_Mix')
+    if credit_mix == 'Bad':
+        tips.append('Cơ cấu tín dụng "Bad" — cân bằng thêm giữa thẻ tín dụng, vay tín chấp, vay có bảo đảm để cải thiện.')
+
+    # ==== Tip 8: Credit history length ====
+    history = user_inputs.get('Credit_History_Months')
+    if history is not None and history < 24:
+        tips.append(f'Lịch sử tín dụng chỉ {history} tháng — quá ngắn. Duy trì tài khoản/thẻ hiện có càng lâu càng tốt.')
+
+    # ==== Tip 9: Payment of minimum amount ====
+    pay_min = user_inputs.get('Payment_of_Min_Amount')
+    if pay_min == 'Yes':
+        tips.append('Bạn chỉ đang trả khoản tối thiểu — dấu hiệu tài chính căng thẳng. Cố gắng trả nhiều hơn mức minimum ít nhất 20%.')
+
+    # ==== Tip 10: EMI vs salary ====
+    emi_ratio = user_inputs.get('EMI_to_Salary_Ratio')
+    if emi_ratio is not None and emi_ratio > 0.5:
+        tips.append(f'EMI hàng tháng chiếm {emi_ratio:.0%} lương — quá cao. Nên duy trì dưới 40% để có dòng tiền dự phòng.')
+
+    # ==== Fallback: nếu Good mà không có tip nào cụ thể ====
     if len(tips) == 1 and cls == 'Good':
         tips.append('Tiếp tục duy trì thói quen tài chính hiện tại.')
     return tips
