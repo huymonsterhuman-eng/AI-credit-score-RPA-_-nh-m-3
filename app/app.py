@@ -10,8 +10,8 @@ import streamlit as st
 from config import (APP_SUBTITLE, APP_TITLE, DISCLAIMER,
                      N8N_WEBHOOK_URL, WEBHOOK_TIMEOUT)
 from utils import (CLASS_COLORS, CLASS_LABELS_VI, derive_behavior,
-                    get_previous_prediction, get_shap_values, load_artifacts,
-                    predict, save_prediction, suggestions_for)
+                    diff_inputs, get_previous_prediction, get_shap_values,
+                    load_artifacts, predict, save_prediction, suggestions_for)
 
 
 st.set_page_config(page_title=APP_TITLE, page_icon='💳', layout='wide')
@@ -401,6 +401,82 @@ if submitted:
             st.warning('⚠️ Nhóm tín dụng của bạn đã hạ. Xem gợi ý cải thiện ở trên để quay lại quỹ đạo.')
         elif d_good > 0.05:
             st.info('📈 Chưa đổi nhóm nhưng xác suất Good đang tăng — bạn đi đúng hướng, cố gắng thêm.')
+
+        # ---- Expander: factor-level diff ----
+        with st.expander('🔍 Xem yếu tố nào thay đổi giữa 2 lần', expanded=False):
+            diffs = diff_inputs(previous['inputs'], user_inputs, top_n=8)
+            if not diffs:
+                st.info('Không có yếu tố actionable nào thay đổi đáng kể giữa 2 lần tra cứu.')
+            else:
+                st.caption(
+                    'Bar xanh = thay đổi có lợi (tăng khả năng vào Good). '
+                    'Bar đỏ = thay đổi bất lợi. Sort theo mức độ thay đổi.'
+                )
+                # Build DataFrame for chart
+                chart_df = pd.DataFrame([
+                    {
+                        'Feature': d['label'],
+                        'Delta': d['delta_pct'] if d.get('delta_pct') is not None else (d['delta'] * 50 if d['is_categorical'] else d['delta']),
+                        'Impact': d['impact'],
+                        'Prev': d['prev'],
+                        'Curr': d['curr'],
+                        'IsCat': d['is_categorical'],
+                        'Format': d.get('format'),
+                    }
+                    for d in diffs
+                ])
+                # Sort ascending cho horizontal bar (nhỏ nhất trên)
+                chart_df = chart_df.sort_values('Delta')
+
+                fig_diff = go.Figure(go.Bar(
+                    y=chart_df['Feature'],
+                    x=chart_df['Delta'],
+                    orientation='h',
+                    marker_color=['#5cb85c' if i == 'good' else '#d9534f' for i in chart_df['Impact']],
+                    text=[
+                        (f"{r['Prev']} → {r['Curr']}" if r['IsCat']
+                         else (r['Format'] or '{:.1f}').format(r['Prev']) + ' → ' +
+                              (r['Format'] or '{:.1f}').format(r['Curr']))
+                        for _, r in chart_df.iterrows()
+                    ],
+                    textposition='outside',
+                ))
+                fig_diff.update_layout(
+                    height=max(280, 40 + 40 * len(chart_df)),
+                    margin=dict(l=20, r=100, t=20, b=20),
+                    xaxis_title='Mức độ thay đổi (%)',
+                    yaxis_title='',
+                    showlegend=False,
+                )
+                fig_diff.add_vline(x=0, line_width=1, line_color='gray')
+                st.plotly_chart(fig_diff, use_container_width=True)
+
+                # Text summary — top 3 tích cực + top 3 tiêu cực
+                pos = [d for d in diffs if d['impact'] == 'good'][:3]
+                neg = [d for d in diffs if d['impact'] == 'bad'][:3]
+                sc1, sc2 = st.columns(2)
+                with sc1:
+                    st.markdown('**🟢 Cải thiện nổi bật:**')
+                    if pos:
+                        for d in pos:
+                            if d['is_categorical']:
+                                st.write(f"• {d['label']}: {d['prev']} → **{d['curr']}**")
+                            else:
+                                fmt = d.get('format') or '{:.1f}'
+                                st.write(f"• {d['label']}: {fmt.format(d['prev'])} → **{fmt.format(d['curr'])}**")
+                    else:
+                        st.caption('Không có cải thiện nổi bật.')
+                with sc2:
+                    st.markdown('**🔴 Xấu đi:**')
+                    if neg:
+                        for d in neg:
+                            if d['is_categorical']:
+                                st.write(f"• {d['label']}: {d['prev']} → **{d['curr']}**")
+                            else:
+                                fmt = d.get('format') or '{:.1f}'
+                                st.write(f"• {d['label']}: {fmt.format(d['prev'])} → **{fmt.format(d['curr'])}**")
+                    else:
+                        st.caption('Không có yếu tố xấu đi.')
 
     st.markdown('---')
 

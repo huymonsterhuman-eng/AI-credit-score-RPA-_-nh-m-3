@@ -393,6 +393,105 @@ def get_previous_prediction(email: str, exclude_id: int | None = None) -> dict |
     }
 
 
+# Feature nào là "actionable" (user có thể control) và hướng "good" là gì.
+# Direction: 'down' = giảm là tốt, 'up' = tăng là tốt
+ACTIONABLE_FEATURES = {
+    # Field: (label_vi, direction, unit_format)
+    'Annual_Income':              ('Thu nhập hàng năm',       'up',   '${:,.0f}'),
+    'Monthly_Inhand_Salary':      ('Lương thực nhận',         'up',   '${:,.0f}'),
+    'Monthly_Balance':            ('Số dư cuối tháng',        'up',   '${:,.0f}'),
+    'Total_EMI_per_month':        ('EMI hàng tháng',          'down', '${:,.0f}'),
+    'Amount_invested_monthly':    ('Đầu tư hàng tháng',       'up',   '${:,.0f}'),
+    'Num_Bank_Accounts':          ('Số tài khoản NH',         'up',   '{:.0f}'),
+    'Num_Credit_Card':            ('Số thẻ tín dụng',         'down', '{:.0f}'),
+    'Num_of_Loan':                ('Số khoản vay',            'down', '{:.0f}'),
+    'Interest_Rate':              ('Lãi suất TB',             'down', '{:.1f}%'),
+    'Outstanding_Debt':           ('Nợ tồn đọng',             'down', '${:,.0f}'),
+    'Credit_Utilization_Ratio':   ('Tỷ lệ dùng tín dụng',     'down', '{:.1f}%'),
+    'Delay_from_due_date':        ('Số ngày trả trễ',         'down', '{:.0f} ngày'),
+    'Num_of_Delayed_Payment':     ('Số lần trả trễ',          'down', '{:.0f}'),
+    'Num_Credit_Inquiries':       ('Số lần tra cứu',          'down', '{:.0f}'),
+    'Changed_Credit_Limit':       ('Thay đổi hạn mức',        'down', '{:.1f}'),
+    # Categorical (special handling)
+    'Payment_of_Min_Amount':      ('Trả khoản tối thiểu',     'cat',  None),
+    'Credit_Mix':                 ('Chất lượng cơ cấu tín dụng', 'cat', None),
+}
+
+# Ordering cho categorical features (index cao hơn = tốt hơn)
+CATEGORICAL_ORDER = {
+    'Payment_of_Min_Amount': {'Yes': 0, 'NM': 1, 'No': 2},
+    'Credit_Mix': {'Bad': 0, 'Standard': 1, 'Good': 2},
+}
+
+
+def diff_inputs(prev_inputs: dict, curr_inputs: dict, top_n: int = 8) -> list[dict]:
+    """So sánh 2 dict inputs, trả về top_n feature có thay đổi lớn nhất.
+
+    Mỗi item là dict:
+      { 'feature', 'label', 'prev', 'curr', 'delta', 'delta_pct',
+        'impact': 'good'|'bad'|'neutral', 'format' }
+    """
+    diffs = []
+    for field, (label, direction, fmt) in ACTIONABLE_FEATURES.items():
+        prev_v = prev_inputs.get(field)
+        curr_v = curr_inputs.get(field)
+        if prev_v is None or curr_v is None:
+            continue
+
+        if direction == 'cat':
+            # Categorical: dùng ordering để tính "delta rank"
+            order = CATEGORICAL_ORDER.get(field, {})
+            prev_rank = order.get(str(prev_v), 1)
+            curr_rank = order.get(str(curr_v), 1)
+            if prev_rank == curr_rank:
+                continue  # không thay đổi
+            impact = 'good' if curr_rank > prev_rank else 'bad'
+            diffs.append({
+                'feature': field, 'label': label,
+                'prev': str(prev_v), 'curr': str(curr_v),
+                'delta': curr_rank - prev_rank,
+                'delta_pct': None,
+                'impact': impact, 'is_categorical': True,
+                'format': fmt,
+            })
+        else:
+            # Numeric
+            try:
+                prev_num = float(prev_v)
+                curr_num = float(curr_v)
+            except (TypeError, ValueError):
+                continue
+            delta = curr_num - prev_num
+            if abs(delta) < 1e-6:
+                continue  # không thay đổi
+            # Impact: giảm là tốt (down) → delta<0 là good
+            if direction == 'down':
+                impact = 'good' if delta < 0 else 'bad'
+            else:  # up
+                impact = 'good' if delta > 0 else 'bad'
+            delta_pct = (delta / prev_num * 100) if prev_num != 0 else None
+            diffs.append({
+                'feature': field, 'label': label,
+                'prev': prev_num, 'curr': curr_num,
+                'delta': delta, 'delta_pct': delta_pct,
+                'impact': impact, 'is_categorical': False,
+                'format': fmt,
+            })
+
+    # Sort theo magnitude — categorical được ưu tiên (rank change nhỏ nhưng ý nghĩa)
+    # Chuẩn hóa magnitude: numeric dùng abs(delta_pct) nếu có, categorical dùng
+    # abs(delta) * 50 để boost lên top
+    def _mag(d):
+        if d['is_categorical']:
+            return abs(d['delta']) * 50
+        if d['delta_pct'] is not None:
+            return abs(d['delta_pct'])
+        return abs(d['delta'])
+
+    diffs.sort(key=_mag, reverse=True)
+    return diffs[:top_n]
+
+
 # ============ Admin Dashboard helpers ============
 
 def check_admin_password(input_password: str) -> bool:

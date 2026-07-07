@@ -13,7 +13,8 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import ADMIN_PASSWORD, APP_TITLE
-from utils import CLASS_COLORS, check_admin_password, load_sheet_data
+from utils import (CLASS_COLORS, check_admin_password, diff_inputs,
+                    load_sheet_data)
 
 
 st.set_page_config(page_title=f'{APP_TITLE} — Admin', page_icon='📊', layout='wide')
@@ -320,7 +321,7 @@ def show_dashboard():
 
                 # Nếu có nhiều hơn 1 lượt → vẽ trend cho customer
                 if len(history) > 1 and 'Xác suất Good' in history.columns:
-                    st.markdown('#### Xu hướng cải thiện của khách')
+                    st.markdown('#### 📈 Xu hướng cải thiện của khách')
                     trend_df = history.sort_values('Thời gian').copy()
                     fig_trend = px.line(
                         trend_df, x='Thời gian',
@@ -335,6 +336,49 @@ def show_dashboard():
                                              yaxis=dict(range=[0, 1], tickformat='.0%'),
                                              margin=dict(l=20, r=20, t=20, b=20))
                     st.plotly_chart(fig_trend, use_container_width=True)
+
+                    # ===== Section: Factor comparison (từ SQLite local) =====
+                    st.markdown('#### 🔬 So sánh yếu tố giữa lần đầu và lần cuối')
+                    st.caption(
+                        'Đọc từ SQLite local (data/predictions.db). '
+                        'Nếu customer submit trên máy khác thì không có dữ liệu ở đây.'
+                    )
+                    try:
+                        import sqlite3, json as _json
+                        from config import PROJECT_ROOT
+                        _db = PROJECT_ROOT / 'data' / 'predictions.db'
+                        if not _db.exists():
+                            st.info('Chưa có database — chưa customer nào submit sau khi Phase 1 deploy.')
+                        else:
+                            _email_lc = search_email.strip().lower()
+                            with sqlite3.connect(_db) as _conn:
+                                _conn.row_factory = sqlite3.Row
+                                _rows = _conn.execute(
+                                    """SELECT timestamp, inputs_json FROM predictions
+                                       WHERE email LIKE ? ORDER BY timestamp ASC""",
+                                    (f'%{_email_lc}%',)
+                                ).fetchall()
+                            if len(_rows) < 2:
+                                st.info(f'Cần ≥ 2 lượt trong SQLite của email `{search_email}` để so sánh factor. Hiện có {len(_rows)}.')
+                            else:
+                                first_inputs = _json.loads(_rows[0]['inputs_json'])
+                                last_inputs = _json.loads(_rows[-1]['inputs_json'])
+                                _diffs = diff_inputs(first_inputs, last_inputs, top_n=10)
+                                if not _diffs:
+                                    st.info('Không phát hiện thay đổi actionable giữa lần đầu và lần cuối.')
+                                else:
+                                    _cmp_df = pd.DataFrame([
+                                        {
+                                            'Yếu tố': d['label'],
+                                            'Lần đầu': (d.get('format') or '{:.1f}').format(d['prev']) if not d['is_categorical'] else str(d['prev']),
+                                            'Lần cuối': (d.get('format') or '{:.1f}').format(d['curr']) if not d['is_categorical'] else str(d['curr']),
+                                            'Đánh giá': '🟢 Cải thiện' if d['impact'] == 'good' else '🔴 Xấu đi',
+                                        }
+                                        for d in _diffs
+                                    ])
+                                    st.dataframe(_cmp_df, use_container_width=True, hide_index=True)
+                    except Exception as _e:
+                        st.caption(f'Không đọc được factor diff: {_e}')
             else:
                 st.info(f'Không tìm thấy lượt tra cứu nào với email `{search_email}`.')
 
