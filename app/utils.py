@@ -397,16 +397,16 @@ def get_previous_prediction(email: str, exclude_id: int | None = None) -> dict |
 # Direction: 'down' = giảm là tốt, 'up' = tăng là tốt
 ACTIONABLE_FEATURES = {
     # Field: (label_vi, direction, unit_format)
-    'Annual_Income':              ('Thu nhập hàng năm',       'up',   '${:,.0f}'),
-    'Monthly_Inhand_Salary':      ('Lương thực nhận',         'up',   '${:,.0f}'),
-    'Monthly_Balance':            ('Số dư cuối tháng',        'up',   '${:,.0f}'),
-    'Total_EMI_per_month':        ('EMI hàng tháng',          'down', '${:,.0f}'),
-    'Amount_invested_monthly':    ('Đầu tư hàng tháng',       'up',   '${:,.0f}'),
+    'Annual_Income':              ('Thu nhập hàng năm',       'up',   '{:,.0f} USD'),
+    'Monthly_Inhand_Salary':      ('Lương thực nhận',         'up',   '{:,.0f} USD'),
+    'Monthly_Balance':            ('Số dư cuối tháng',        'up',   '{:,.0f} USD'),
+    'Total_EMI_per_month':        ('EMI hàng tháng',          'down', '{:,.0f} USD'),
+    'Amount_invested_monthly':    ('Đầu tư hàng tháng',       'up',   '{:,.0f} USD'),
     'Num_Bank_Accounts':          ('Số tài khoản NH',         'up',   '{:.0f}'),
     'Num_Credit_Card':            ('Số thẻ tín dụng',         'down', '{:.0f}'),
     'Num_of_Loan':                ('Số khoản vay',            'down', '{:.0f}'),
     'Interest_Rate':              ('Lãi suất TB',             'down', '{:.1f}%'),
-    'Outstanding_Debt':           ('Nợ tồn đọng',             'down', '${:,.0f}'),
+    'Outstanding_Debt':           ('Nợ tồn đọng',             'down', '{:,.0f} USD'),
     'Credit_Utilization_Ratio':   ('Tỷ lệ dùng tín dụng',     'down', '{:.1f}%'),
     'Delay_from_due_date':        ('Số ngày trả trễ',         'down', '{:.0f} ngày'),
     'Num_of_Delayed_Payment':     ('Số lần trả trễ',          'down', '{:.0f}'),
