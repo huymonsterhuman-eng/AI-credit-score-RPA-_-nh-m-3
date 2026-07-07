@@ -319,23 +319,67 @@ def show_dashboard():
                             use_container_width=True, hide_index=True)
                 st.caption(f'Tìm thấy **{len(history)} lượt** cho email khớp `{search_email}`.')
 
-                # Nếu có nhiều hơn 1 lượt → vẽ trend cho customer
-                if len(history) > 1 and 'Xác suất Good' in history.columns:
-                    st.markdown('#### 📈 Xu hướng cải thiện của khách')
-                    trend_df = history.sort_values('Thời gian').copy()
-                    fig_trend = px.line(
-                        trend_df, x='Thời gian',
-                        y=['Xác suất Poor', 'Xác suất Standard', 'Xác suất Good'],
-                        color_discrete_map={
-                            'Xác suất Poor': CLASS_COLORS['Poor'],
-                            'Xác suất Standard': CLASS_COLORS['Standard'],
-                            'Xác suất Good': CLASS_COLORS['Good'],
-                        }, markers=True,
-                    )
-                    fig_trend.update_layout(height=300,
-                                             yaxis=dict(range=[0, 1], tickformat='.0%'),
-                                             margin=dict(l=20, r=20, t=20, b=20))
-                    st.plotly_chart(fig_trend, use_container_width=True)
+                # Nếu có nhiều hơn 1 lượt → vẽ trend cho customer (từ SQLite)
+                if len(history) > 1:
+                    st.markdown('#### 📈 Xu hướng cải thiện của khách (từ SQLite)')
+                    try:
+                        import sqlite3
+                        from config import PROJECT_ROOT
+                        _db = PROJECT_ROOT / 'data' / 'predictions.db'
+                        if not _db.exists():
+                            st.info('Chưa có SQLite database — chỉ dùng Google Sheet để hiển thị.')
+                        else:
+                            _email_lc = search_email.strip().lower()
+                            with sqlite3.connect(_db) as _conn:
+                                _sql_df = pd.read_sql_query(
+                                    """SELECT timestamp, predicted_class,
+                                              p_poor, p_standard, p_good
+                                       FROM predictions
+                                       WHERE email LIKE ? ORDER BY timestamp ASC""",
+                                    _conn, params=(f'%{_email_lc}%',)
+                                )
+                            if _sql_df.empty:
+                                st.info('Email chưa có trong SQLite (chỉ có trên Sheet cũ).')
+                            else:
+                                _sql_df['timestamp'] = pd.to_datetime(_sql_df['timestamp'])
+                                # Thêm số thứ tự lượt
+                                _sql_df['Lượt'] = range(1, len(_sql_df) + 1)
+
+                                fig_trend = go.Figure()
+                                fig_trend.add_trace(go.Scatter(
+                                    x=_sql_df['Lượt'], y=_sql_df['p_poor'],
+                                    name='P(Poor)', mode='lines+markers',
+                                    line=dict(color=CLASS_COLORS['Poor'], width=2),
+                                    marker=dict(size=10),
+                                ))
+                                fig_trend.add_trace(go.Scatter(
+                                    x=_sql_df['Lượt'], y=_sql_df['p_standard'],
+                                    name='P(Standard)', mode='lines+markers',
+                                    line=dict(color=CLASS_COLORS['Standard'], width=2),
+                                    marker=dict(size=10),
+                                ))
+                                fig_trend.add_trace(go.Scatter(
+                                    x=_sql_df['Lượt'], y=_sql_df['p_good'],
+                                    name='P(Good)', mode='lines+markers',
+                                    line=dict(color=CLASS_COLORS['Good'], width=2),
+                                    marker=dict(size=10),
+                                ))
+                                fig_trend.update_layout(
+                                    height=350,
+                                    yaxis=dict(range=[0, 1], tickformat='.0%',
+                                                title='Xác suất'),
+                                    xaxis=dict(title='Số lượt tra cứu (theo thứ tự)',
+                                                dtick=1),
+                                    margin=dict(l=20, r=20, t=30, b=20),
+                                    hovermode='x unified',
+                                )
+                                st.plotly_chart(fig_trend, use_container_width=True)
+                                st.caption(
+                                    f'Hiển thị {len(_sql_df)} lượt tra cứu từ SQLite. '
+                                    f'Trục X = thứ tự lượt (cũ nhất → mới nhất).'
+                                )
+                    except Exception as _e:
+                        st.caption(f'Không đọc được SQLite: {_e}')
 
                     # ===== Section: Factor comparison (từ SQLite local) =====
                     st.markdown('#### 🔬 So sánh yếu tố giữa lần đầu và lần cuối')
