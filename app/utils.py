@@ -1,14 +1,20 @@
 """Hàm dùng lại cho Streamlit app: load model, build input, predict, SHAP, admin dashboard."""
 
 import json
+import sqlite3
+from datetime import datetime
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import joblib
 
 from config import (ADMIN_PASSWORD, FEATURES_PATH, GOOGLE_SHEET_ID, MODEL_PATH,
-                     SERVICE_ACCOUNT_PATH, SHEET_NAME)
+                     PROJECT_ROOT, SERVICE_ACCOUNT_PATH, SHEET_NAME)
+
+# ============ SQLite predictions store ============
+PREDICTIONS_DB = PROJECT_ROOT / 'data' / 'predictions.db'
 
 
 # Màu cho 3 nhãn phân loại
@@ -280,6 +286,70 @@ def get_shap_values(user_inputs: dict, top_n: int = 8) -> pd.DataFrame | None:
     df['abs_shap'] = df['shap_value'].abs()
     df = df.sort_values('abs_shap', ascending=False).head(top_n)
     return df.drop(columns=['abs_shap']).reset_index(drop=True)
+
+
+# ============ SQLite predictions store ============
+
+def init_predictions_db() -> None:
+    """Tạo file DB + schema nếu chưa có. Idempotent — an toàn gọi mỗi lần app start."""
+    PREDICTIONS_DB.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(PREDICTIONS_DB) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS predictions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT,
+                customer_name TEXT,
+                timestamp TEXT NOT NULL,
+                predicted_class TEXT NOT NULL,
+                p_poor REAL NOT NULL,
+                p_standard REAL NOT NULL,
+                p_good REAL NOT NULL,
+                inputs_json TEXT NOT NULL
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_email ON predictions(email)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON predictions(timestamp)")
+
+
+def save_prediction(email: str, customer_name: str, timestamp: str,
+                     inputs: dict, result: dict) -> int:
+    """INSERT 1 row vào predictions DB. Trả về id vừa insert.
+
+    - email: normalized lowercase strip (rỗng nếu user không nhập)
+    - timestamp: ISO string
+    - inputs: dict full user_inputs (sẽ JSON serialize)
+    - result: dict từ predict() — có 'predicted_class' và 'proba'
+    """
+    init_predictions_db()  # ensure schema exists
+
+    email_norm = (email or '').strip().lower()
+
+    # Convert numpy types trong inputs → native để JSON serialize được
+    def _clean(v):
+        if isinstance(v, (np.integer,)): return int(v)
+        if isinstance(v, (np.floating,)): return float(v)
+        if isinstance(v, np.ndarray): return v.tolist()
+        return v
+    inputs_clean = {k: _clean(v) for k, v in inputs.items()}
+
+    with sqlite3.connect(PREDICTIONS_DB) as conn:
+        cursor = conn.execute(
+            """INSERT INTO predictions
+                (email, customer_name, timestamp, predicted_class,
+                 p_poor, p_standard, p_good, inputs_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                email_norm,
+                customer_name or '',
+                timestamp,
+                result['predicted_class'],
+                float(result['proba']['Poor']),
+                float(result['proba']['Standard']),
+                float(result['proba']['Good']),
+                json.dumps(inputs_clean, ensure_ascii=False),
+            )
+        )
+        return cursor.lastrowid
 
 
 # ============ Admin Dashboard helpers ============

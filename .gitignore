@@ -24,6 +24,10 @@ credentials.json
 token.json
 models/service_account.json
 
+# SQLite predictions store (local only, per-machine)
+data/predictions.db
+data/*.db-journal
+
 # IDE
 .vscode/
 .idea/

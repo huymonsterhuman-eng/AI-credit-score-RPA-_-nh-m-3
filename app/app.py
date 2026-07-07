@@ -10,7 +10,8 @@ import streamlit as st
 from config import (APP_SUBTITLE, APP_TITLE, DISCLAIMER,
                      N8N_WEBHOOK_URL, WEBHOOK_TIMEOUT)
 from utils import (CLASS_COLORS, CLASS_LABELS_VI, derive_behavior,
-                    get_shap_values, load_artifacts, predict, suggestions_for)
+                    get_shap_values, load_artifacts, predict, save_prediction,
+                    suggestions_for)
 
 
 st.set_page_config(page_title=APP_TITLE, page_icon='💳', layout='wide')
@@ -272,6 +273,20 @@ if submitted:
 
     with st.spinner('Đang dự đoán...'):
         result = predict(user_inputs)
+
+    # Lưu snapshot vào SQLite để tracking progress lần sau
+    prediction_timestamp = datetime.now().isoformat()
+    try:
+        save_prediction(
+            email=customer_email,
+            customer_name=customer_name,
+            timestamp=prediction_timestamp,
+            inputs=user_inputs,
+            result=result,
+        )
+    except Exception as e:
+        # Không block flow chính nếu DB lỗi
+        st.caption(f'⚠️ Không lưu được vào lịch sử local: {e}')
 
     st.success('Dự đoán hoàn tất.')
     st.markdown('---')
