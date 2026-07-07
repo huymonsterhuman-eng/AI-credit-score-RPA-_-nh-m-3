@@ -10,8 +10,8 @@ import streamlit as st
 from config import (APP_SUBTITLE, APP_TITLE, DISCLAIMER,
                      N8N_WEBHOOK_URL, WEBHOOK_TIMEOUT)
 from utils import (CLASS_COLORS, CLASS_LABELS_VI, derive_behavior,
-                    get_shap_values, load_artifacts, predict, save_prediction,
-                    suggestions_for)
+                    get_previous_prediction, get_shap_values, load_artifacts,
+                    predict, save_prediction, suggestions_for)
 
 
 st.set_page_config(page_title=APP_TITLE, page_icon='💳', layout='wide')
@@ -276,8 +276,12 @@ if submitted:
 
     # Lưu snapshot vào SQLite để tracking progress lần sau
     prediction_timestamp = datetime.now().isoformat()
+    saved_row_id = None
+    previous = None
     try:
-        save_prediction(
+        # Lấy lần trước TRƯỚC khi save (để không lẫn lộn với chính lần này)
+        previous = get_previous_prediction(customer_email)
+        saved_row_id = save_prediction(
             email=customer_email,
             customer_name=customer_name,
             timestamp=prediction_timestamp,
@@ -327,6 +331,76 @@ if submitted:
     st.subheader('💡 Gợi ý cải thiện')
     for tip in suggestions_for(result, user_inputs):
         st.write('•', tip)
+
+    # ---- So sánh với lần tra cứu trước (nếu có) ----
+    if previous:
+        from datetime import datetime as _dt
+        try:
+            prev_dt = _dt.fromisoformat(previous['timestamp'])
+            days_ago = (_dt.now() - prev_dt).days
+            date_str = prev_dt.strftime('%d/%m/%Y %H:%M')
+        except (ValueError, TypeError):
+            days_ago = None
+            date_str = str(previous['timestamp'])
+
+        st.markdown('---')
+        st.subheader('📊 So sánh với lần tra cứu trước')
+
+        days_label = f'({days_ago} ngày trước)' if days_ago is not None else ''
+        st.caption(f'Bạn đã tra cứu ngày **{date_str}** {days_label}.')
+
+        # Delta các probability
+        d_poor = result['proba']['Poor'] - previous['proba']['Poor']
+        d_std = result['proba']['Standard'] - previous['proba']['Standard']
+        d_good = result['proba']['Good'] - previous['proba']['Good']
+
+        cc1, cc2, cc3, cc4 = st.columns(4)
+
+        # Class change
+        prev_cls = previous['predicted_class']
+        curr_cls = result['predicted_class']
+        class_ranks = {'Poor': 0, 'Standard': 1, 'Good': 2}
+        cls_delta = class_ranks.get(curr_cls, 1) - class_ranks.get(prev_cls, 1)
+        if cls_delta > 0:
+            cls_indicator = '🎉 Cải thiện'
+        elif cls_delta < 0:
+            cls_indicator = '⚠️ Xấu đi'
+        else:
+            cls_indicator = '→ Giữ nguyên'
+
+        cc1.metric(
+            'Nhóm phân loại',
+            f'{prev_cls} → {curr_cls}',
+            delta=cls_indicator,
+            delta_color='normal' if cls_delta >= 0 else 'inverse',
+        )
+        # P(Poor): giảm là tốt → dùng delta_color inverse
+        cc2.metric(
+            'P(Poor)',
+            f'{result["proba"]["Poor"]*100:.1f}%',
+            delta=f'{d_poor*100:+.1f}%',
+            delta_color='inverse',
+        )
+        cc3.metric(
+            'P(Standard)',
+            f'{result["proba"]["Standard"]*100:.1f}%',
+            delta=f'{d_std*100:+.1f}%',
+            delta_color='off',
+        )
+        # P(Good): tăng là tốt → delta_color normal
+        cc4.metric(
+            'P(Good)',
+            f'{result["proba"]["Good"]*100:.1f}%',
+            delta=f'{d_good*100:+.1f}%',
+            delta_color='normal',
+        )
+
+        if cls_delta > 0:
+            st.success('🎉 Chúc mừng bạn đã cải thiện nhóm tín dụng! Tiếp tục duy trì thói quen tốt.')
+        elif cls_delta < 0:
+            st.warning('⚠️ Nhóm tín dụng của bạn đã hạ. Xem gợi ý cải thiện ở trên để quay lại quỹ đạo.')
+        elif d_good > 0.05:
+            st.info('📈 Chưa đổi nhóm nhưng xác suất Good đang tăng — bạn đi đúng hướng, cố gắng thêm.')
 
     st.markdown('---')
 
@@ -394,6 +468,11 @@ if submitted:
             'predicted_class_vi': result['predicted_class_vi'],
             'proba': {k: round(float(v), 4) for k, v in result['proba'].items()},
             'inputs': {k: to_native(v) for k, v in user_inputs.items()},
+            'previous': ({
+                'timestamp': previous['timestamp'],
+                'predicted_class': previous['predicted_class'],
+                'proba': {k: round(float(v), 4) for k, v in previous['proba'].items()},
+            } if previous else None),
         }
         try:
             r = requests.post(N8N_WEBHOOK_URL, json=payload, timeout=WEBHOOK_TIMEOUT)

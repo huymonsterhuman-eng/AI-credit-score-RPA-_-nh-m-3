@@ -352,6 +352,47 @@ def save_prediction(email: str, customer_name: str, timestamp: str,
         return cursor.lastrowid
 
 
+def get_previous_prediction(email: str, exclude_id: int | None = None) -> dict | None:
+    """Tìm prediction gần nhất của email (loại trừ exclude_id nếu có).
+
+    Trả về dict:
+      { 'id', 'timestamp', 'predicted_class', 'proba': {...}, 'inputs': {...} }
+    Hoặc None nếu email rỗng / không tìm thấy record trước đó.
+    """
+    email_norm = (email or '').strip().lower()
+    if not email_norm:
+        return None
+    if not PREDICTIONS_DB.exists():
+        return None
+
+    with sqlite3.connect(PREDICTIONS_DB) as conn:
+        conn.row_factory = sqlite3.Row
+        query = """
+            SELECT id, timestamp, predicted_class, p_poor, p_standard, p_good,
+                   inputs_json, customer_name
+            FROM predictions
+            WHERE email = ? AND (? IS NULL OR id != ?)
+            ORDER BY timestamp DESC
+            LIMIT 1
+        """
+        row = conn.execute(query, (email_norm, exclude_id, exclude_id)).fetchone()
+
+    if row is None:
+        return None
+    return {
+        'id': row['id'],
+        'timestamp': row['timestamp'],
+        'customer_name': row['customer_name'],
+        'predicted_class': row['predicted_class'],
+        'proba': {
+            'Poor': row['p_poor'],
+            'Standard': row['p_standard'],
+            'Good': row['p_good'],
+        },
+        'inputs': json.loads(row['inputs_json']),
+    }
+
+
 # ============ Admin Dashboard helpers ============
 
 def check_admin_password(input_password: str) -> bool:
