@@ -5,20 +5,20 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "credit-scoring",
-        "responseMode": "onReceived",
-        "responseData": "firstEntryJson",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 400],
-      "id": "webhook-node",
+      "position": [
+        -768,
+        112
+      ],
+      "id": "4149f18e-8dbd-46c4-b38c-922e9bd1cfb1",
       "name": "Webhook",
       "webhookId": "credit-scoring-webhook"
     },
     {
       "parameters": {
-        "authentication": "oAuth2",
         "operation": "append",
         "documentId": {
           "__rl": true,
@@ -34,30 +34,114 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "timestamp": "={{ $json.body.timestamp }}",
-            "customer_name": "={{ $json.body.customer_name }}",
-            "customer_email": "={{ $json.body.customer_email }}",
-            "fico_score": "={{ $json.body.fico_score }}",
-            "rating": "={{ $json.body.rating }}",
-            "predicted_class": "={{ $json.body.predicted_class }}",
-            "p_poor": "={{ $json.body.proba.Poor }}",
-            "p_standard": "={{ $json.body.proba.Standard }}",
-            "p_good": "={{ $json.body.proba.Good }}",
-            "notes": "={{ $json.body.fico_score < 580 ? 'Cần review manual' : '' }}"
+            "Thời gian": "={{ $json.body.timestamp }}",
+            "Họ tên": "={{ $json.body.customer_name }}",
+            "Email": "={{ $json.body.customer_email }}",
+            "Nhóm dự đoán": "={{ $json.body.predicted_class }}",
+            "Xác suất Poor": "={{ $json.body.proba.Poor }}",
+            "Xác suất Standard": "={{ $json.body.proba.Standard }}",
+            "Xác suất Good": "={{ $json.body.proba.Good }}",
+            "Ghi chú": "={{ $json.body.predicted_class === 'Poor' ? 'Cần review — case Poor' : ($json.body.proba.Poor > 0.4 ? 'Cần theo dõi — P(Poor) cao' : '') }}"
           },
           "matchingColumns": [],
-          "schema": []
+          "schema": [
+            {
+              "id": "Thời gian",
+              "displayName": "Thời gian",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Họ tên",
+              "displayName": "Họ tên",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nhóm dự đoán",
+              "displayName": "Nhóm dự đoán",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Xác suất Poor",
+              "displayName": "Xác suất Poor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Xác suất Standard",
+              "displayName": "Xác suất Standard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Xác suất Good",
+              "displayName": "Xác suất Good",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ghi chú",
+              "displayName": "Ghi chú",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [500, 400],
-      "id": "sheets-node",
+      "position": [
+        -496,
+        112
+      ],
+      "id": "d5973e84-a14a-48ef-bb99-46260b01c1be",
       "name": "Append to Sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REPLACE_WITH_GSHEETS_CREDENTIAL_ID",
+          "id": "rK4VJJUbo18S1Rbo",
           "name": "Google Sheets account"
         }
       }
@@ -68,7 +152,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "loose"
+            "typeValidation": "loose",
+            "version": 1
           },
           "conditions": [
             {
@@ -88,26 +173,31 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [760, 400],
-      "id": "if-node",
+      "position": [
+        -240,
+        112
+      ],
+      "id": "f6f9af1f-c55e-4967-976c-423519d013d7",
       "name": "Có email?"
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const b = $('Webhook').item.json.body;\nconst ratingColors = {\n  'Poor': '#d9534f',\n  'Fair': '#e67e22',\n  'Good': '#7cb342',\n  'Very Good': '#43a047',\n  'Exceptional': '#1b5e20'\n};\nconst color = ratingColors[b.rating] || '#666';\nconst pct = (v) => (v * 100).toFixed(1);\nconst score = Math.round(b.fico_score);\n\n// Sinh gợi ý theo score\nlet tips = [];\nif (score < 580) tips.push('Điểm rất thấp — cần cải thiện thanh toán đúng hạn.');\nelse if (score < 670) tips.push('Điểm ở mức trung bình — có thể vay nhưng lãi suất cao.');\nelse if (score < 740) tips.push('Điểm tốt — đủ điều kiện vay với lãi suất ưu đãi.');\nelse tips.push('Điểm rất tốt — bạn thuộc nhóm khách hàng ưu tiên.');\nif ((b.inputs && b.inputs.Debt_to_Income_Annual) > 0.4)\n  tips.push('Giảm tỷ lệ nợ/thu nhập xuống dưới 40%.');\nif ((b.inputs && b.inputs.Credit_Utilization_Ratio) > 60)\n  tips.push('Giữ tỷ lệ sử dụng tín dụng dưới 30%.');\n\nconst tipsHTML = tips.map(t => `<li style=\"margin:6px 0;\">${t}</li>`).join('');\n\nconst html = `<!DOCTYPE html>\n<html><head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family: Arial, Helvetica, sans-serif; background:#f5f5f5; padding:20px; margin:0;\">\n  <div style=\"max-width:640px; margin:0 auto; background:white; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);\">\n    <div style=\"background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:32px; color:white; text-align:center;\">\n      <div style=\"font-size:28px; font-weight:bold;\">💳 AI Credit Scoring</div>\n      <div style=\"opacity:0.9; margin-top:4px;\">Kết quả chấm điểm tín dụng của bạn</div>\n    </div>\n    <div style=\"padding:32px;\">\n      <p style=\"font-size:16px; color:#333;\">Xin chào <b>${b.customer_name || 'Bạn'}</b>,</p>\n      <p style=\"color:#555;\">Chúng tôi đã hoàn tất phân tích thông tin tài chính của bạn. Dưới đây là kết quả:</p>\n      <div style=\"text-align:center; margin:32px 0;\">\n        <div style=\"font-size:84px; font-weight:bold; color:${color}; line-height:1;\">${score}</div>\n        <div style=\"display:inline-block; margin-top:12px; padding:10px 28px; background:${color}; color:white; border-radius:24px; font-weight:bold; font-size:18px;\">${b.rating}</div>\n        <div style=\"color:#999; font-size:13px; margin-top:8px;\">Thang FICO: 300 – 850</div>\n      </div>\n      <div style=\"background:#f9f9f9; border-radius:8px; padding:20px; margin-top:16px;\">\n        <div style=\"font-weight:bold; color:#333; margin-bottom:12px;\">Phân tích xác suất theo nhóm:</div>\n        <div style=\"display:flex; justify-content:space-between; margin:8px 0;\"><span style=\"color:#d9534f;\">● Poor</span><b>${pct(b.proba.Poor)}%</b></div>\n        <div style=\"display:flex; justify-content:space-between; margin:8px 0;\"><span style=\"color:#6c8ebf;\">● Standard</span><b>${pct(b.proba.Standard)}%</b></div>\n        <div style=\"display:flex; justify-content:space-between; margin:8px 0;\"><span style=\"color:#5cb85c;\">● Good</span><b>${pct(b.proba.Good)}%</b></div>\n      </div>\n      <div style=\"margin-top:24px;\">\n        <div style=\"font-weight:bold; color:#333; margin-bottom:8px;\">💡 Gợi ý cải thiện:</div>\n        <ul style=\"color:#555; padding-left:20px;\">${tipsHTML}</ul>\n      </div>\n      <div style=\"border-top:1px solid #eee; margin-top:32px; padding-top:20px; font-size:12px; color:#999; text-align:center;\">\n        Email tự động từ hệ thống <b>AI Credit Scoring</b><br/>\n        Đồ án môn Công nghệ dịch vụ tài chính<br/>\n        Kết quả chỉ mang tính minh họa học tập, không dùng cho quyết định tín dụng thực tế.\n      </div>\n    </div>\n  </div>\n</body></html>`;\n\nreturn { json: { emailHTML: html, subject: `Điểm tín dụng của bạn: ${score} (${b.rating})` } };"
+        "jsCode": "const b = $('Webhook').item.json.body;\nconst inputs = b.inputs || {};\nconst previous = b.previous;  // Có thể null nếu lần đầu\n\n// ===== Colors + labels =====\nconst classColors = {\n  'Poor': '#d9534f',\n  'Standard': '#f0ad4e',\n  'Good': '#5cb85c',\n};\nconst classLabelsVi = {\n  'Poor': 'Kém',\n  'Standard': 'Trung bình',\n  'Good': 'Tốt',\n};\nconst color = classColors[b.predicted_class] || '#666';\nconst classVi = classLabelsVi[b.predicted_class] || b.predicted_class;\nconst pct = (v) => (v * 100).toFixed(1);\n\n// ===== Thời gian =====\nconst now = new Date(b.timestamp || Date.now());\nconst dateVi = now.toLocaleString('vi-VN', {\n  timeZone: 'Asia/Ho_Chi_Minh',\n  year: 'numeric', month: '2-digit', day: '2-digit',\n  hour: '2-digit', minute: '2-digit'\n});\n\n// ===== Gợi ý (mirror logic suggestions_for) =====\nlet overview = '';\nif (b.predicted_class === 'Poor') {\n  overview = 'Nhóm tín dụng của bạn ở mức <b style=\"color:#d9534f\">Kém</b>. Hầu hết ngân hàng sẽ từ chối hoặc yêu cầu lãi suất cao (>15%/năm). Cần 6-12 tháng thanh toán đúng hạn để cải thiện.';\n} else if (b.predicted_class === 'Standard') {\n  overview = 'Nhóm tín dụng ở mức <b style=\"color:#f0ad4e\">Trung bình</b>. Có thể được duyệt vay nhưng lãi suất chưa tối ưu. Cải thiện lên Good sẽ giảm 2-3% lãi suất.';\n} else {\n  overview = 'Nhóm tín dụng <b style=\"color:#5cb85c\">Tốt</b>. Đủ điều kiện vay với lãi suất ưu đãi.';\n}\n\nconst critical = [];\nif (inputs.Payment_of_Min_Amount === 'Yes')\n  critical.push('Bạn chỉ đang trả khoản tối thiểu — dấu hiệu tài chính căng thẳng.');\nif (inputs.Delay_from_due_date > 15)\n  critical.push(`Trả trễ trung bình <b>${inputs.Delay_from_due_date} ngày</b> — bị ghi CIC.`);\nif (inputs.Num_of_Delayed_Payment > 10)\n  critical.push(`Đã trả trễ <b>${inputs.Num_of_Delayed_Payment} lần</b> — con số quá cao.`);\nif (inputs.Debt_to_Income_Annual > 0.5)\n  critical.push(`Tỷ lệ nợ/thu nhập <b>${(inputs.Debt_to_Income_Annual*100).toFixed(0)}%</b> — cực kỳ cao.`);\n\nconst midterm = [];\nif (inputs.Credit_Utilization_Ratio > 60)\n  midterm.push(`Dùng <b>${inputs.Credit_Utilization_Ratio.toFixed(0)}%</b> hạn mức — giảm dưới 30% sẽ tăng điểm nhanh.`);\nif (inputs.Num_Credit_Inquiries > 5)\n  midterm.push(`<b>${inputs.Num_Credit_Inquiries} lần</b> tra cứu tín dụng — hạn chế mở thẻ/vay mới 6-12 tháng.`);\nif (inputs.EMI_to_Salary_Ratio > 0.5)\n  midterm.push(`EMI chiếm <b>${(inputs.EMI_to_Salary_Ratio*100).toFixed(0)}%</b> lương — nên dưới 40%.`);\n\nconst longterm = [];\nif (inputs.Credit_History_Months < 24)\n  longterm.push(`Lịch sử tín dụng chỉ <b>${inputs.Credit_History_Months} tháng</b> — quá ngắn.`);\n\nconst strengths = [];\nif (inputs.Credit_Mix === 'Good') strengths.push('Cơ cấu tín dụng đa dạng.');\nif (inputs.Payment_of_Min_Amount === 'No') strengths.push('Trả nhiều hơn khoản tối thiểu.');\nif (inputs.Delay_from_due_date <= 3) strengths.push('Trả gần như đúng hạn.');\nif (inputs.Credit_Utilization_Ratio < 30)\n  strengths.push(`Sử dụng tín dụng thận trọng (<b>${inputs.Credit_Utilization_Ratio.toFixed(0)}%</b>).`);\n\nconst sectionHTML = (title, items, hex, icon) => {\n  if (!items.length) return '';\n  const list = items.map(t => `<li style=\"margin:10px 0; line-height:1.6; color:#333;\">${t}</li>`).join('');\n  return `<div style=\"margin-top:20px; padding:16px 16px 16px 20px; background:${hex}15; border-left:4px solid ${hex}; border-radius:6px;\">\n    <div style=\"font-weight:bold; color:${hex}; margin-bottom:8px; font-size:15px;\">${icon} ${title}</div>\n    <ul style=\"padding-left:20px; margin:8px 0;\">${list}</ul>\n  </div>`;\n};\n\nconst suggestionsHTML =\n  `<div style=\"color:#333; margin-bottom:8px; line-height:1.7; font-size:14px;\">${overview}</div>` +\n  sectionHTML('CẦN XỬ LÝ NGAY', critical, '#d9534f', '🚨') +\n  sectionHTML('CẢI THIỆN TRUNG HẠN', midterm, '#e67e22', '📉') +\n  sectionHTML('ĐỊNH HƯỚNG DÀI HẠN', longterm, '#3498db', '📅') +\n  sectionHTML('ĐIỂM MẠNH', strengths, '#5cb85c', '✅');\n\n// ===== NEW: Section So sánh với lần trước =====\nlet comparisonHTML = '';\nif (previous) {\n  const prevDate = new Date(previous.timestamp);\n  const prevDateVi = prevDate.toLocaleString('vi-VN', {\n    timeZone: 'Asia/Ho_Chi_Minh',\n    year: 'numeric', month: '2-digit', day: '2-digit'\n  });\n  const daysAgo = Math.max(0, Math.round((now - prevDate) / (1000 * 60 * 60 * 24)));\n\n  const dPoor = (b.proba.Poor - previous.proba.Poor) * 100;\n  const dStd = (b.proba.Standard - previous.proba.Standard) * 100;\n  const dGood = (b.proba.Good - previous.proba.Good) * 100;\n\n  const classRanks = { 'Poor': 0, 'Standard': 1, 'Good': 2 };\n  const classDelta = (classRanks[b.predicted_class] ?? 1) - (classRanks[previous.predicted_class] ?? 1);\n\n  let banner = '';\n  if (classDelta > 0) {\n    banner = `<div style=\"margin-top:16px; padding:14px; background:#5cb85c15; border-left:4px solid #5cb85c; border-radius:6px; color:#2d6b30; font-weight:bold;\">🎉 Chúc mừng bạn đã cải thiện nhóm tín dụng!</div>`;\n  } else if (classDelta < 0) {\n    banner = `<div style=\"margin-top:16px; padding:14px; background:#d9534f15; border-left:4px solid #d9534f; border-radius:6px; color:#8a2a25; font-weight:bold;\">⚠️ Nhóm tín dụng đã hạ. Xem gợi ý ở trên để quay lại quỹ đạo.</div>`;\n  } else if (dGood > 5) {\n    banner = `<div style=\"margin-top:16px; padding:14px; background:#3498db15; border-left:4px solid #3498db; border-radius:6px; color:#1e5a80; font-weight:bold;\">📈 Chưa đổi nhóm nhưng xác suất Good đang tăng — đi đúng hướng!</div>`;\n  }\n\n  const arrow = (d, goodDir = 'up') => {\n    if (Math.abs(d) < 0.1) return '<span style=\"color:#999;\">→ 0.0%</span>';\n    const isGood = goodDir === 'up' ? d > 0 : d < 0;\n    const arrowChar = d > 0 ? '↑' : '↓';\n    const c = isGood ? '#5cb85c' : '#d9534f';\n    return `<span style=\"color:${c}; font-weight:bold;\">${arrowChar} ${Math.abs(d).toFixed(1)}%</span>`;\n  };\n\n  const compRow = (label, prev, curr, delta, goodDir) => `\n    <tr>\n      <td style=\"padding:10px 12px; color:#333;\">${label}</td>\n      <td style=\"padding:10px 12px; text-align:right; color:#666;\">${prev}</td>\n      <td style=\"padding:10px 12px; text-align:right; color:#333; font-weight:bold;\">${curr}</td>\n      <td style=\"padding:10px 12px; text-align:right;\">${arrow(delta, goodDir)}</td>\n    </tr>`;\n\n  const prevClassVi = classLabelsVi[previous.predicted_class] || previous.predicted_class;\n\n  comparisonHTML = `\n  <div style=\"margin-top:32px; padding:20px; background:#f9f9f9; border-radius:8px;\">\n    <div style=\"font-weight:bold; color:#333; font-size:17px; border-bottom:2px solid #eee; padding-bottom:8px; margin-bottom:12px;\">\n      📊 So sánh với lần tra cứu trước\n    </div>\n    <div style=\"color:#666; font-size:13px; margin-bottom:12px;\">\n      Bạn đã tra cứu ngày <b>${prevDateVi}</b> (${daysAgo} ngày trước).\n    </div>\n    <table style=\"width:100%; border-collapse:collapse;\">\n      <thead>\n        <tr style=\"background:#eee;\">\n          <th style=\"padding:10px 12px; text-align:left; color:#555; font-size:13px;\">Chỉ số</th>\n          <th style=\"padding:10px 12px; text-align:right; color:#555; font-size:13px;\">Lần trước</th>\n          <th style=\"padding:10px 12px; text-align:right; color:#555; font-size:13px;\">Lần này</th>\n          <th style=\"padding:10px 12px; text-align:right; color:#555; font-size:13px;\">Thay đổi</th>\n        </tr>\n      </thead>\n      <tbody>\n        <tr>\n          <td style=\"padding:10px 12px; color:#333;\">Nhóm phân loại</td>\n          <td style=\"padding:10px 12px; text-align:right; color:#666;\">${prevClassVi} (${previous.predicted_class})</td>\n          <td style=\"padding:10px 12px; text-align:right; color:${color}; font-weight:bold;\">${classVi} (${b.predicted_class})</td>\n          <td style=\"padding:10px 12px; text-align:right;\">${classDelta > 0 ? '<span style=\"color:#5cb85c; font-weight:bold;\">🎉 Tăng</span>' : classDelta < 0 ? '<span style=\"color:#d9534f; font-weight:bold;\">⚠️ Giảm</span>' : '<span style=\"color:#999;\">→ Giữ</span>'}</td>\n        </tr>\n        ${compRow('Xác suất Poor', pct(previous.proba.Poor) + '%', pct(b.proba.Poor) + '%', dPoor, 'down')}\n        ${compRow('Xác suất Standard', pct(previous.proba.Standard) + '%', pct(b.proba.Standard) + '%', dStd, 'up')}\n        ${compRow('Xác suất Good', pct(previous.proba.Good) + '%', pct(b.proba.Good) + '%', dGood, 'up')}\n      </tbody>\n    </table>\n    ${banner}\n  </div>`;\n}\n\n// ===== Assemble HTML =====\nconst html = `<!DOCTYPE html>\n<html><head><meta charset=\"UTF-8\"></head>\n<body style=\"font-family: Arial, Helvetica, sans-serif; background:#f5f5f5; padding:20px; margin:0;\">\n  <div style=\"max-width:680px; margin:0 auto; background:white; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);\">\n    <div style=\"background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding:32px; color:white; text-align:center;\">\n      <div style=\"font-size:28px; font-weight:bold;\">💳 AI Credit Classification</div>\n      <div style=\"opacity:0.9; margin-top:4px;\">Kết quả phân loại tín dụng</div>\n    </div>\n\n    <div style=\"padding:32px;\">\n      <p style=\"font-size:16px; color:#333; margin:0;\">Xin chào <b>${b.customer_name || 'Bạn'}</b>,</p>\n      <p style=\"color:#555; margin-top:8px;\">Chúng tôi đã hoàn tất phân tích thông tin tài chính của bạn ngày <b>${dateVi}</b>. Kết quả:</p>\n\n      <div style=\"text-align:center; margin:32px 0;\">\n        <div style=\"display:inline-block; padding:24px 48px; background:${color}; color:white; border-radius:12px;\">\n          <div style=\"font-size:14px; opacity:0.9;\">Nhóm phân loại</div>\n          <div style=\"font-size:36px; font-weight:bold; margin-top:6px;\">${classVi}</div>\n          <div style=\"font-size:15px; opacity:0.95; margin-top:2px;\">(${b.predicted_class})</div>\n        </div>\n      </div>\n\n      <div style=\"background:#f9f9f9; border-radius:8px; padding:20px;\">\n        <div style=\"font-weight:bold; color:#333; margin-bottom:12px;\">📊 Xác suất theo từng nhóm</div>\n        <table style=\"width:100%; border-collapse:collapse;\">\n          <tr><td style=\"padding:8px 0; color:#d9534f;\">● Poor (Kém)</td><td style=\"padding:8px 0; text-align:right; font-weight:bold; color:#333;\">${pct(b.proba.Poor)}%</td></tr>\n          <tr><td style=\"padding:8px 0; color:#f0ad4e;\">● Standard (Trung bình)</td><td style=\"padding:8px 0; text-align:right; font-weight:bold; color:#333;\">${pct(b.proba.Standard)}%</td></tr>\n          <tr><td style=\"padding:8px 0; color:#5cb85c;\">● Good (Tốt)</td><td style=\"padding:8px 0; text-align:right; font-weight:bold; color:#333;\">${pct(b.proba.Good)}%</td></tr>\n        </table>\n      </div>\n\n      ${comparisonHTML}\n\n      <div style=\"margin-top:32px;\">\n        <div style=\"font-weight:bold; color:#333; margin-bottom:12px; font-size:17px; border-bottom:2px solid #eee; padding-bottom:8px;\">\n          💡 Phân tích chi tiết & Gợi ý cải thiện\n        </div>\n        ${suggestionsHTML}\n      </div>\n\n      <div style=\"background:#eef2ff; border-radius:8px; padding:20px; margin-top:24px; text-align:center;\">\n        <div style=\"font-weight:bold; color:#333; margin-bottom:8px;\">Cần tư vấn thêm?</div>\n        <div style=\"color:#555; font-size:14px; line-height:1.7;\">\n          📧 Email hỗ trợ: support@credit-scoring.demo<br/>\n          📞 Hotline: 1900-XXXX (miễn phí, 8h – 21h)\n        </div>\n      </div>\n\n      <div style=\"border-top:1px solid #eee; margin-top:32px; padding-top:20px; font-size:12px; color:#999; text-align:center; line-height:1.6;\">\n        Email tự động từ hệ thống <b>AI Credit Classification</b><br/>\n        Đồ án môn Công nghệ dịch vụ tài chính<br/>\n        Kết quả chỉ mang tính minh họa học tập, không dùng cho quyết định tín dụng thực tế.\n      </div>\n    </div>\n  </div>\n</body></html>`;\n\nreturn { json: { emailHTML: html, subject: `Kết quả tín dụng: ${classVi} (${b.predicted_class})` } };"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1000, 300],
-      "id": "code-node",
+      "position": [
+        0,
+        0
+      ],
+      "id": "7bd49aaf-1ab7-4157-8cee-bd28048a3c32",
       "name": "Build Email HTML"
     },
     {
       "parameters": {
         "sendTo": "={{ $('Webhook').item.json.body.customer_email }}",
         "subject": "={{ $json.subject }}",
-        "emailType": "html",
         "message": "={{ $json.emailHTML }}",
         "options": {
           "appendAttribution": false
@@ -115,17 +205,22 @@
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [1240, 300],
-      "id": "gmail-node",
+      "position": [
+        240,
+        0
+      ],
+      "id": "9cafd58e-1dfe-4017-92bb-e44dc4a36c61",
       "name": "Send Email",
+      "webhookId": "a121170b-bbc0-452b-81c2-f7289398449a",
       "credentials": {
         "gmailOAuth2": {
-          "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID",
+          "id": "jdYX3KVOhYrAhv5O",
           "name": "Gmail account"
         }
       }
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook": {
       "main": [
@@ -157,8 +252,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Build Email HTML": {
@@ -173,8 +267,18 @@
       ]
     }
   },
+  "active": true,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "active": false
+  "versionId": "1d042350-d376-4eda-b345-7ca52481f728",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5e2026a5e7b64e0333738e6e2a849d0c9a8586dfc6036cad1b0604fa2feaa1e6"
+  },
+  "nodeGroups": [],
+  "id": "xcWDWUFN8hfTHPI3",
+  "tags": []
 }
