@@ -97,99 +97,307 @@ def predict(user_inputs: dict) -> dict:
     }
 
 
-def suggestions_for(result: dict, user_inputs: dict) -> list[str]:
-    """Sinh gợi ý cải thiện dựa trên class dự đoán và feature.
+def suggestions_for(result: dict, user_inputs: dict,
+                     previous: dict | None = None) -> list[str]:
+    """Sinh gợi ý cải thiện theo ngữ cảnh: class hiện tại + lịch sử lần trước.
 
-    Các ngưỡng threshold dưới đây được chọn dựa trên chuẩn công nghiệp
-    (FICO, CFPB, NHNN Việt Nam) — chi tiết nguồn ở từng tip.
+    5 tình huống:
+      - Poor lần đầu     : giải thích + danh sách ưu tiên khẩn
+      - Poor không đổi   : thẳng thắn, nhắc lại gợi ý chưa làm
+      - Poor đang cải thiện (vẫn Poor nhưng P(Good) tăng): động viên + tiếp tục
+      - Standard         : lộ trình cụ thể lên Good
+      - Good             : khuyến nghị sản phẩm + duy trì
     """
     tips = []
     cls = result['predicted_class']
 
-    # ==== Tip 1: Overview theo class model ====
-    if cls == 'Poor':
-        tips.append('⚠️ Nhóm tín dụng Kém — hầu hết ngân hàng sẽ từ chối hoặc đưa lãi suất cao.')
+    # ── Xác định ngữ cảnh lịch sử ──────────────────────────────────────────
+    prev_cls = previous.get('predicted_class') if previous else None
+    prev_p_good = previous['proba']['Good'] if previous else None
+    curr_p_good = result['proba']['Good']
+    improving = (prev_p_good is not None) and (curr_p_good - prev_p_good > 0.05)
+    stagnant = (prev_cls == 'Poor') and (cls == 'Poor') and not improving
+    first_time = previous is None
+
+    # ── Overview theo ngữ cảnh ─────────────────────────────────────────────
+    if cls == 'Poor' and first_time:
+        tips.append(
+            '⚠️ **Nhóm tín dụng Kém (Poor)** — lần đầu tra cứu. '
+            'Hầu hết ngân hàng sẽ từ chối hoặc áp lãi suất >15%/năm. '
+            'Tin tốt: với 6–12 tháng kỷ luật tài chính, bạn hoàn toàn có thể lên Standard.'
+        )
+    elif cls == 'Poor' and stagnant:
+        tips.append(
+            '⚠️ **Vẫn ở nhóm Kém (Poor)** — chưa có cải thiện so với lần trước. '
+            'Các gợi ý bên dưới là những việc cần làm ngay, không nên trì hoãn thêm.'
+        )
+    elif cls == 'Poor' and improving:
+        tips.append(
+            f'📈 **Vẫn Poor nhưng đang tiến bộ** — xác suất Good tăng '
+            f'{(curr_p_good - prev_p_good)*100:.1f}% so với lần trước. '
+            'Đi đúng hướng rồi, tiếp tục duy trì!'
+        )
+    elif cls == 'Standard' and prev_cls == 'Poor':
+        tips.append(
+            '🎉 **Đã lên Standard từ Poor** — cải thiện rõ rệt! '
+            'Bạn đã có thể được duyệt vay cơ bản. '
+            'Bây giờ tập trung lên Good để hưởng lãi suất tốt hơn 2–3%/năm.'
+        )
     elif cls == 'Standard':
-        tips.append('Nhóm tín dụng Trung bình — có thể được duyệt nhưng lãi suất chưa tối ưu.')
+        tips.append(
+            '🟠 **Nhóm Trung bình (Standard)** — có thể được duyệt vay nhưng lãi suất chưa tối ưu. '
+            'Khoảng cách lên Good không xa — thường chỉ cần cải thiện 2–3 yếu tố.'
+        )
+    elif cls == 'Good' and prev_cls in ('Poor', 'Standard'):
+        tips.append(
+            f'✅ **Đã đạt nhóm Tốt (Good)** từ {prev_cls}! '
+            'Bạn đủ điều kiện vay với lãi suất ưu đãi. Duy trì thói quen hiện tại.'
+        )
     else:
-        tips.append('✅ Nhóm tín dụng Tốt — đủ điều kiện vay với lãi suất ưu đãi.')
+        tips.append(
+            '✅ **Nhóm Tốt (Good)** — đủ điều kiện vay với lãi suất ưu đãi. '
+            'Tiếp tục duy trì là cách tốt nhất.'
+        )
 
-    # ==== Tip 2: Debt-to-income ratio ====
-    # Nguồn: US CFPB khuyến nghị DTI ≤ 43% cho Qualified Mortgage.
-    # Fannie Mae/Freddie Mac chấp nhận tối đa 45%. Ngưỡng 40% chọn conservative
-    # để cảnh báo sớm. Ref: https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/
-    dti = user_inputs.get('Debt_to_Income_Annual')
-    if dti is not None and dti > 0.4:
-        tips.append(f'Tỷ lệ nợ trên thu nhập năm là {dti:.1%} — nên giảm dưới 40% để cải thiện.')
+    # ── Lấy các feature cần dùng ───────────────────────────────────────────
+    dti          = user_inputs.get('Debt_to_Income_Annual', 0) or 0
+    delay        = user_inputs.get('Delay_from_due_date', 0) or 0
+    num_delay    = user_inputs.get('Num_of_Delayed_Payment', 0) or 0
+    util         = user_inputs.get('Credit_Utilization_Ratio', 0) or 0
+    inquiries    = user_inputs.get('Num_Credit_Inquiries', 0) or 0
+    history      = user_inputs.get('Credit_History_Months', 0) or 0
+    pay_min      = user_inputs.get('Payment_of_Min_Amount', '')
+    emi_ratio    = user_inputs.get('EMI_to_Salary_Ratio', 0) or 0
+    credit_mix   = user_inputs.get('Credit_Mix', '')
+    outstanding  = user_inputs.get('Outstanding_Debt', 0) or 0
+    balance      = user_inputs.get('Monthly_Balance', 0) or 0
+    invested     = user_inputs.get('Amount_invested_monthly', 0) or 0
+    num_loans    = user_inputs.get('Num_of_Loan', 0) or 0
+    payday       = user_inputs.get('Has_Payday_Loan', 0)
 
-    # ==== Tip 3: Delay from due date ====
-    # Nguồn: Thông tư 11/2021/TT-NHNN — nợ quá hạn 10 ngày phân loại vào nhóm 2
-    # (nợ cần chú ý). Đây là ngưỡng CIC bắt đầu ghi nhận rủi ro tín dụng.
-    delay = user_inputs.get('Delay_from_due_date')
-    if delay is not None and delay > 10:
-        tips.append(f'Trả trễ trung bình {delay:.0f} ngày — cải thiện thanh toán đúng hạn là yếu tố ảnh hưởng lớn nhất.')
+    # ── GỢI Ý THEO TỪNG TÌNH HUỐNG ────────────────────────────────────────
 
-    # ==== Tip 4: Credit utilization ====
-    # Nguồn: FICO/Experian best practice — tối ưu dưới 30%, trên 30% là high risk.
-    # Ngưỡng 60% chọn để cảnh báo case rõ ràng.
-    # Ref: https://www.myfico.com/credit-education/blog/credit-utilization-ratio
-    util = user_inputs.get('Credit_Utilization_Ratio')
-    if util is not None and util > 60:
-        tips.append(f'Tỷ lệ sử dụng tín dụng {util:.0f}% — nên giữ dưới 30% để tối ưu.')
+    if cls == 'Poor':
+        # ── Phần 1: Vấn đề KHẨN CẤP (ảnh hưởng điểm nhiều nhất) ──────────
+        tips.append('─── 🚨 ƯU TIÊN XỬ LÝ NGAY ───')
 
-    # ==== Tip 5: Credit inquiries ====
-    # Nguồn: Experian — mỗi hard inquiry giảm FICO 5-10 điểm, ảnh hưởng 12 tháng.
-    # >5 inquiries trong 6 tháng được coi là pattern rủi ro cao.
-    # Ref: https://www.experian.com/blogs/ask-experian/credit-education/credit-inquiries/
-    inquiries = user_inputs.get('Num_Credit_Inquiries')
-    if inquiries is not None and inquiries > 5:
-        tips.append(f'Số lần bị tra cứu tín dụng ({inquiries}) khá cao — hạn chế mở thẻ/vay mới trong 6 tháng tới.')
+        if delay > 30:
+            tips.append(
+                f'🔴 Trả trễ {delay:.0f} ngày (rất nghiêm trọng) — '
+                'Đây là yếu tố phá điểm số 1. Bắt đầu từ ngay hôm nay: '
+                'setup nhắc nhở tự động hoặc GIRO tự động trả trước ngày đến hạn 2–3 ngày. '
+                'Chỉ cần 3 tháng trả đúng hạn liên tiếp, điểm sẽ bắt đầu cải thiện.'
+            )
+        elif delay > 10:
+            tips.append(
+                f'🔴 Trả trễ TB {delay:.0f} ngày — vượt ngưỡng CIC ghi nhận rủi ro (TT 11/2021/TT-NHNN). '
+                'Hành động: bật nhắc lịch thanh toán trên điện thoại, trả trước ít nhất 5 ngày.'
+            )
 
-    # ==== Tip 6: Số lần trả trễ ====
-    # Nguồn: không có chuẩn công nghiệp cứng. Ngưỡng 10 chọn dựa trên
-    # phân phối dataset + logic: >10 lần trễ = pattern hành vi, không phải sự cố đơn lẻ.
-    # Design choice minh họa.
-    num_delay = user_inputs.get('Num_of_Delayed_Payment')
-    if num_delay is not None and num_delay > 10:
-        tips.append(f'Đã trả trễ {num_delay} lần — con số cao, ngân hàng coi là khách rủi ro. Nên setup autopay để không trễ tiếp.')
+        if num_delay > 20:
+            tips.append(
+                f'🔴 {num_delay} lần trả trễ — hồ sơ đã bị đánh dấu "khách rủi ro cao" ở CIC. '
+                'Không có cách nào xóa lịch sử này nhanh chóng — chỉ có thể xây dựng lại bằng cách '
+                'trả đúng hạn liên tục 12+ tháng tới. Bắt đầu càng sớm càng tốt.'
+            )
+        elif num_delay > 10:
+            tips.append(
+                f'🟠 {num_delay} lần trả trễ — cần dừng ngay. '
+                'Setup autopay cho tất cả khoản vay/thẻ hiện có.'
+            )
 
-    # ==== Tip 7: Credit mix ====
-    # Nguồn: FICO — Credit Mix chiếm 10% điểm FICO. Giá trị "Bad" là label từ dataset,
-    # phản ánh cơ cấu tín dụng mất cân bằng (chỉ có 1 loại vay hoặc quá tập trung).
-    # Ref: https://www.myfico.com/credit-education/whats-in-your-credit-score
-    credit_mix = user_inputs.get('Credit_Mix')
-    if credit_mix == 'Bad':
-        tips.append('Cơ cấu tín dụng "Bad" — cân bằng thêm giữa thẻ tín dụng, vay tín chấp, vay có bảo đảm để cải thiện.')
+        if pay_min == 'Yes':
+            tips.append(
+                '🔴 Đang chỉ trả khoản tối thiểu — dấu hiệu dòng tiền căng thẳng. '
+                'Tiền lãi tích lũy gấp 3–5× nếu chỉ trả minimum. '
+                'Mục tiêu: tăng dần lên trả ít nhất 30% số dư mỗi tháng.'
+            )
 
-    # ==== Tip 8: Credit history length ====
-    # Nguồn: FICO chính thức — Length of Credit History chiếm 15% điểm FICO.
-    # Hồ sơ <24 tháng được coi là "thin file", điểm thấp do thiếu data lịch sử.
-    # Ngưỡng 2 năm = ranh giới thoát khỏi thin file status.
-    # Ref: https://www.myfico.com/credit-education/whats-in-your-credit-score
-    history = user_inputs.get('Credit_History_Months')
-    if history is not None and history < 24:
-        tips.append(f'Lịch sử tín dụng chỉ {history} tháng — quá ngắn. Duy trì tài khoản/thẻ hiện có càng lâu càng tốt.')
+        if payday:
+            tips.append(
+                '🔴 Đang có vay ngắn hạn (Payday Loan) — lãi suất loại này thường 200–400%/năm. '
+                'Ưu tiên tất toán khoản này trước tất cả các khoản khác.'
+            )
 
-    # ==== Tip 9: Payment of minimum amount ====
-    # Nguồn: CFPB + Investopedia — trả tối thiểu là dấu hiệu tài chính căng thẳng,
-    # tổng lãi trả gấp 3-5 lần so với trả full balance. Đây là boolean behavior,
-    # không có threshold số.
-    # Ref: https://www.investopedia.com/terms/m/minimum-monthly-payment.asp
-    pay_min = user_inputs.get('Payment_of_Min_Amount')
-    if pay_min == 'Yes':
-        tips.append('Bạn chỉ đang trả khoản tối thiểu — dấu hiệu tài chính căng thẳng. Cố gắng trả nhiều hơn mức minimum ít nhất 20%.')
+        if dti > 0.6:
+            tips.append(
+                f'🔴 Tỷ lệ nợ/thu nhập {dti:.0%} — cực kỳ nguy hiểm. '
+                f'Nợ hiện tại {outstanding:,.0f} USD chiếm quá lớn so với thu nhập. '
+                'Cần lập kế hoạch trả nợ ngay: ưu tiên khoản lãi suất cao nhất trước (phương pháp Avalanche).'
+            )
+        elif dti > 0.4:
+            tips.append(
+                f'🟠 Tỷ lệ nợ/thu nhập {dti:.0%} — vượt ngưỡng an toàn 40%. '
+                'Tránh vay thêm bất kỳ khoản nào cho đến khi giảm được nợ hiện tại.'
+            )
 
-    # ==== Tip 10: EMI vs salary ====
-    # Nguồn: NHTM Việt Nam (Vietcombank, VPBank, Techcombank) thường yêu cầu
-    # EMI/thu nhập <40-50% để duyệt vay. >50% = không đủ dòng tiền dự phòng
-    # cho tình huống khẩn cấp.
-    emi_ratio = user_inputs.get('EMI_to_Salary_Ratio')
-    if emi_ratio is not None and emi_ratio > 0.5:
-        tips.append(f'EMI hàng tháng chiếm {emi_ratio:.0%} lương — quá cao. Nên duy trì dưới 40% để có dòng tiền dự phòng.')
+        # ── Phần 2: Cải thiện TRUNG HẠN (3–6 tháng) ──────────────────────
+        tips.append('─── 📉 CẢI THIỆN TRONG 3–6 THÁNG ───')
 
-    # ==== Fallback: nếu Good mà không có tip nào cụ thể ====
-    if len(tips) == 1 and cls == 'Good':
-        tips.append('Tiếp tục duy trì thói quen tài chính hiện tại.')
+        if util > 80:
+            tips.append(
+                f'Tỷ lệ sử dụng tín dụng {util:.0f}% — quá ngưỡng nguy hiểm. '
+                'Mục tiêu giảm xuống dưới 60% trước, sau đó dưới 30%. '
+                'Cách: trả bớt dư nợ thẻ, hoặc xin tăng hạn mức (nếu ngân hàng đồng ý).'
+            )
+        elif util > 60:
+            tips.append(
+                f'Tỷ lệ sử dụng tín dụng {util:.0f}%. '
+                'Mục tiêu: giảm xuống dưới 30% — đây là ngưỡng FICO coi là "safe zone".'
+            )
+
+        if emi_ratio > 0.5:
+            tips.append(
+                f'EMI chiếm {emi_ratio:.0%} lương — không còn dư địa tài chính. '
+                'Xem xét đàm phán gia hạn kỳ hạn vay để giảm số tiền trả hàng tháng, '
+                'hoặc tìm nguồn thu nhập phụ.'
+            )
+
+        if inquiries > 10:
+            tips.append(
+                f'{inquiries} lần bị tra cứu tín dụng — quá nhiều, báo hiệu đang tìm vay khắp nơi. '
+                'Dừng hoàn toàn việc nộp đơn vay mới trong 12 tháng tới.'
+            )
+        elif inquiries > 5:
+            tips.append(
+                f'{inquiries} lần tra cứu — hạn chế mở thêm thẻ/vay mới trong 6 tháng tới.'
+            )
+
+        if credit_mix == 'Bad':
+            tips.append(
+                'Cơ cấu tín dụng "Bad" — đang quá tập trung vào 1 loại (thường là thẻ tín dụng). '
+                'Sau khi ổn định thanh toán, cân nhắc thêm 1 khoản vay tín chấp nhỏ để đa dạng hóa.'
+            )
+
+        # ── Phần 3: Nếu là lần 2+ mà vẫn Poor ───────────────────────────
+        if stagnant:
+            tips.append('─── 🔄 NHÌN LẠI SO VỚI LẦN TRƯỚC ───')
+            tips.append(
+                'Điểm chưa cải thiện kể từ lần tra cứu trước. '
+                'Hãy trung thực: trong các gợi ý lần trước, bạn đã thực hiện được gợi ý nào? '
+                'Tập trung vào đúng 1 việc dễ nhất trước — thường là "trả đúng hạn tháng này".'
+            )
+
+        # ── Phần 4: Lộ trình lên Standard ────────────────────────────────
+        tips.append('─── 🗓️ LỘ TRÌNH LÊN STANDARD (6–12 THÁNG) ───')
+        tips.append(
+            '① Tháng 1–3: Trả đúng hạn 100%, dừng mọi khoản vay mới. '
+            '② Tháng 3–6: Giảm credit utilization xuống dưới 60%. '
+            '③ Tháng 6–12: Duy trì streak thanh toán đúng hạn, giảm dần số lần trễ trong hồ sơ CIC.'
+        )
+
+    elif cls == 'Standard':
+        # ── Standard: tập trung vào lộ trình lên Good ─────────────────────
+        tips.append('─── 📋 PHÂN TÍCH ĐỂ LÊN GOOD ───')
+
+        blockers = []  # các yếu tố đang cản trở lên Good
+
+        if delay > 10:
+            blockers.append(f'trả trễ {delay:.0f} ngày')
+            tips.append(
+                f'🟠 Trả trễ TB {delay:.0f} ngày — đây là rào cản chính. '
+                'Giảm xuống dưới 5 ngày trong 3 tháng tới sẽ tạo ra sự khác biệt rõ rệt.'
+            )
+
+        if util > 30:
+            blockers.append(f'utilization {util:.0f}%')
+            tips.append(
+                f'🟠 Tỷ lệ sử dụng tín dụng {util:.0f}% — mục tiêu là dưới 30%. '
+                f'Cần giảm khoảng {max(0, util - 30):.0f}% nữa. '
+                'Cách nhanh nhất: trả bớt dư nợ thẻ tín dụng trước ngày sao kê.'
+            )
+
+        if dti > 0.35:
+            blockers.append(f'DTI {dti:.0%}')
+            tips.append(
+                f'🟠 Tỷ lệ nợ/thu nhập {dti:.0%} — nên giảm xuống dưới 35% để vào vùng "Good". '
+                f'Ưu tiên trả bớt {outstanding:,.0f} USD nợ tồn đọng.'
+            )
+
+        if pay_min == 'Yes':
+            blockers.append('chỉ trả minimum')
+            tips.append(
+                'Đang trả khoản tối thiểu — tăng lên trả ít nhất 50% số dư mỗi tháng '
+                'sẽ vừa giảm lãi, vừa cải thiện Payment Value trong mắt ngân hàng.'
+            )
+
+        if num_delay > 5:
+            tips.append(
+                f'{num_delay} lần trả trễ trong hồ sơ — mỗi tháng trả đúng hạn sẽ '
+                '"pha loãng" các lần trễ cũ. Cần khoảng 6 tháng liên tiếp đúng hạn.'
+            )
+
+        if history < 36:
+            tips.append(
+                f'Lịch sử tín dụng {history} tháng — còn ngắn. '
+                'Đừng đóng bất kỳ thẻ/tài khoản nào, dù ít dùng. '
+                'Tuổi lịch sử tín dụng tăng thụ động theo thời gian.'
+            )
+
+        if inquiries > 3:
+            tips.append(
+                f'{inquiries} lần tra cứu — hạn chế nộp đơn vay mới 6 tháng tới. '
+                'Nhiều inquiry làm ngân hàng nghĩ bạn đang "desperate" cần tiền.'
+            )
+
+        if invested < 100:
+            tips.append(
+                f'Đầu tư hàng tháng chỉ {invested:,.0f} USD — tăng lên ít nhất 10% lương. '
+                'Không chỉ cải thiện hồ sơ tài chính mà còn tạo đệm dự phòng.'
+            )
+
+        # Tóm tắt rào cản
+        if blockers:
+            tips.append('─── 🎯 TÓM TẮT: CẦN XỬ LÝ ĐỂ LÊN GOOD ───')
+            tips.append(
+                f'Rào cản chính hiện tại: **{" | ".join(blockers)}**. '
+                'Giải quyết được 2/3 trong số này trong 3 tháng tới có thể đủ để lên Good.'
+            )
+        else:
+            tips.append(
+                '✅ Không có rào cản rõ ràng — bạn đang ở gần ranh giới Good. '
+                'Duy trì ổn định 2–3 tháng nữa, điểm có thể tự đẩy lên.'
+            )
+
+    else:  # Good
+        tips.append('─── ✅ DUY TRÌ & TỐI ƯU HÓA ───')
+
+        if util < 10:
+            tips.append(
+                f'Utilization {util:.0f}% — rất tốt. '
+                'Lưu ý: nếu xuống 0% (không dùng thẻ) thì điểm có thể giảm nhẹ vì không có activity. '
+                'Duy trì 5–15% là lý tưởng.'
+            )
+        else:
+            tips.append(
+                f'Tiếp tục giữ utilization dưới 30% (hiện {util:.0f}%) — đang tốt.'
+            )
+
+        if balance > 0:
+            tips.append(
+                f'Số dư cuối tháng {balance:,.0f} USD — có đệm tài chính tốt. '
+                'Cân nhắc chuyển phần dư sang tài khoản tiết kiệm có lãi suất cao hơn.'
+            )
+
+        if invested < 200:
+            tips.append(
+                'Tăng đầu tư hàng tháng lên ít nhất 15–20% lương. '
+                'Ở mức Good, bạn đủ điều kiện mở thêm tài khoản đầu tư (chứng khoán, quỹ mở).'
+            )
+
+        tips.append('─── 💳 SẢN PHẨM TÍN DỤNG PHÙ HỢP VỚI NHÓM GOOD ───')
+        tips.append(
+            '• Thẻ tín dụng hoàn tiền (cashback) hoặc tích điểm — lãi suất ưu đãi 10–12%/năm.\n'
+            '• Vay mua nhà (Mortgage) — ngân hàng sẵn sàng duyệt với lãi suất tốt.\n'
+            '• Vay tín chấp tiêu dùng — lãi suất thường 10–13%/năm thay vì 15–18% như Standard.'
+        )
+
+        if history < 60:
+            tips.append(
+                f'Lịch sử tín dụng {history} tháng — đang xây dựng tốt. '
+                'Giữ nguyên các tài khoản cũ nhất, đừng đóng dù không dùng.'
+            )
+
     return tips
 
 

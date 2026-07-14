@@ -329,8 +329,8 @@ if submitted:
 
     # ---- Gợi ý (main view) ----
     st.subheader('💡 Gợi ý cải thiện')
-    for tip in suggestions_for(result, user_inputs):
-        st.write('•', tip)
+    for tip in suggestions_for(result, user_inputs, previous=previous):
+        st.write(tip)
 
     # ---- So sánh với lần tra cứu trước (nếu có) ----
     if previous:
