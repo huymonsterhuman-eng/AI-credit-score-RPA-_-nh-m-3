@@ -1,4 +1,4 @@
-"""Streamlit app — AI Credit Classification."""
+"""Streamlit app - AI Credit Classification."""
 
 from datetime import datetime
 
@@ -13,7 +13,7 @@ from utils import (CLASS_COLORS, CLASS_LABELS_VI, derive_behavior,
                     diff_inputs, get_previous_prediction,
                     load_artifacts, predict, save_prediction, suggestions_for)
 
-st.set_page_config(page_title='CreditAI — Đánh giá tín dụng', page_icon=None,
+st.set_page_config(page_title='CreditAI - Đánh giá tín dụng', page_icon=None,
                    layout='wide', initial_sidebar_state='collapsed')
 
 # ── Auth guard ───────────────────────────────────────────────────────────────
@@ -191,7 +191,7 @@ with nav_col2:
 st.markdown("""
 <div class="hero">
   <h1>Đánh giá mức tín dụng cá nhân</h1>
-  <p>Nhập thông tin tài chính — nhận kết quả phân loại tín dụng và gợi ý cải thiện ngay lập tức</p>
+  <p>Nhập thông tin tài chính - nhận kết quả phân loại tín dụng và gợi ý cải thiện ngay lập tức</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -519,7 +519,7 @@ if submitted:
 
                 fig_diff = go.Figure(go.Bar(
                     y=chart_df['Feature'], x=chart_df['Delta'], orientation='h',
-                    marker_color=['#2e7d32' if i == 'good' else '#c62828' for i in chart_df['Impact']],
+                    marker_color=['#2e7d32' if i == 'good' else '#920707' for i in chart_df['Impact']],
                     text=[(f"{r['Prev']} → {r['Curr']}" if r['IsCat']
                            else (r['Format'] or '{:.1f}').format(r['Prev']) + ' → ' +
                                 (r['Format'] or '{:.1f}').format(r['Curr']))

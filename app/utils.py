@@ -750,6 +750,17 @@ def load_sheet_data() -> pd.DataFrame:
     if df.empty:
         return df
 
+    # ── Map tên cột mới (sheet Credit_Log) về tên cũ admin.py đang dùng ──
+    col_rename = {
+        'Timestamp':          'Thời gian',
+        'Customer_Name':      'Họ tên',
+        'Result':             'Nhóm dự đoán',
+        'P_Poor':             'Xác suất Poor',
+        'P_Standard':         'Xác suất Standard',
+        'P_Good':             'Xác suất Good',
+    }
+    df = df.rename(columns={k: v for k, v in col_rename.items() if k in df.columns})
+
     # Parse datetime
     if 'Thời gian' in df.columns:
         df['Thời gian'] = pd.to_datetime(df['Thời gian'], errors='coerce')
@@ -758,10 +769,10 @@ def load_sheet_data() -> pd.DataFrame:
     for col in ('Xác suất Poor', 'Xác suất Standard', 'Xác suất Good'):
         if col in df.columns:
             df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(',', '.'),  # Vietnamese decimal
+                df[col].astype(str).str.replace('%', '').str.replace(',', '.'),
                 errors='coerce'
-            ).astype(float)  # force float64 để tránh conflict khi chia 100
-            # Normalize: nếu value > 1 → chia 100 (Sheet lưu 30.24 thay vì 0.3024)
+            ).astype(float)
+            # Normalize: nếu value > 1 → chia 100 (Sheet lưu "82.3%" hoặc 82.3)
             df[col] = df[col].where(df[col] <= 1, df[col] / 100)
 
     return df.sort_values('Thời gian', ascending=False) if 'Thời gian' in df.columns else df

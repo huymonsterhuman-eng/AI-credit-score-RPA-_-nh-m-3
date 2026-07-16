@@ -1,4 +1,4 @@
-"""Admin Dashboard — báo cáo tổng hợp cho nhân viên."""
+"""Admin Dashboard - báo cáo tổng hợp cho nhân viên."""
 
 import sys
 from datetime import date, timedelta
@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import APP_TITLE
 from utils import (CLASS_COLORS, diff_inputs, load_sheet_data)
 
-st.set_page_config(page_title=f'{APP_TITLE} — Admin', page_icon=None, layout='wide')
+st.set_page_config(page_title=f'{APP_TITLE} - Admin', page_icon=None, layout='wide')
 
 # ── Auth guard ───────────────────────────────────────────────────────────────
 if st.session_state.get('role') != 'admin':

@@ -1,347 +1,756 @@
 {
-  "name": "AI Credit Scoring Workflow",
+  "name": "Credit Scoring Workflow",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "credit-scoring",
-        "responseMode": "lastNode",
+        "responseMode": "onReceived",
         "options": {}
       },
-      "id": "node-webhook",
+      "id": "7d3975e7-49c8-4903-8b32-b062a65913e5",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [-1400, 300],
-      "webhookId": "credit-scoring"
+      "typeVersion": 2,
+      "position": [
+        2064,
+        1488
+      ],
+      "webhookId": "1be3cd59-e837-4918-a572-f5d736af325f"
     },
     {
       "parameters": {
         "operation": "append",
-        "documentId": { "__rl": true, "value": "1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "Sheet1", "mode": "name" },
+        "documentId": {
+          "__rl": true,
+          "value": "18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU",
+          "mode": ""
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Credit_Log"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Thời gian": "={{ $json.body.timestamp }}",
-            "Họ tên": "={{ $json.body.customer_name }}",
+            "Timestamp": "={{ $json.body.timestamp }}",
+            "Customer_Name": "={{ $json.body.customer_name }}",
             "Email": "={{ $json.body.customer_email }}",
-            "Nhóm dự đoán": "={{ $json.body.predicted_class }}",
-            "Xác suất Poor": "={{ $json.body.proba.Poor }}",
-            "Xác suất Standard": "={{ $json.body.proba.Standard }}",
-            "Xác suất Good": "={{ $json.body.proba.Good }}",
-            "Ghi chú": "={{ $json.body.predicted_class === 'Poor' ? 'Cần review' : ($json.body.proba.Poor > 0.4 ? 'Theo dõi' : '') }}",
+            "Result": "={{ $json.body.predicted_class }}",
+            "P_Poor": "={{ (Math.round($json.body.proba.Poor * 1000) / 10).toFixed(1) + '%' }}",
+            "P_Standard": "={{ (Math.round($json.body.proba.Standard * 1000) / 10).toFixed(1) + '%' }}",
+            "P_Good": "={{ (Math.round($json.body.proba.Good * 1000) / 10).toFixed(1) + '%' }}",
+            "Age": "={{ $json.body.inputs.Age }}",
+            "Annual_Income": "={{ $json.body.inputs.Annual_Income }}",
+            "Outstanding_Debt": "={{ $json.body.inputs.Outstanding_Debt }}",
+            "Credit_Utilization": "={{ $json.body.inputs.Credit_Utilization_Ratio }}",
+            "Delay_Days": "={{ $json.body.inputs.Delay_from_due_date }}",
+            "Credit_History_Months": "={{ $json.body.inputs.Credit_History_Months }}",
+            "Notes": "={{ $json.body.predicted_class === 'Poor' ? 'Cần review' : ($json.body.proba.Poor > 0.4 ? 'Theo dõi' : '') }}",
             "Status": "={{ $json.body.predicted_class === 'Poor' ? 'Chưa xử lý' : 'OK' }}"
           },
           "matchingColumns": [],
-          "schema": []
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Result",
+              "displayName": "Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "P_Poor",
+              "displayName": "P_Poor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "P_Standard",
+              "displayName": "P_Standard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "P_Good",
+              "displayName": "P_Good",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Age",
+              "displayName": "Age",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Annual_Income",
+              "displayName": "Annual_Income",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Outstanding_Debt",
+              "displayName": "Outstanding_Debt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Credit_Utilization",
+              "displayName": "Credit_Utilization",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Delay_Days",
+              "displayName": "Delay_Days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Credit_History_Months",
+              "displayName": "Credit_History_Months",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
-      "id": "node-append-log",
-      "name": "Append Log to Sheet",
+      "id": "77b7ff94-ffd6-4d52-866b-acaf587b2185",
+      "name": "Append Credit Log",
       "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [-1160, 300],
-      "credentials": { "googleSheetsOAuth2Api": { "id": "rK4VJJUbo18S1Rbo", "name": "Google Sheets account" } }
+      "typeVersion": 4.5,
+      "position": [
+        2304,
+        1488
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iShtmhilTJGWdL38",
+          "name": "Google Sheets account 2"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
           "conditions": [
             {
-              "id": "if-poor-cond",
-              "leftValue": "={{ $('Webhook').item.json.body.predicted_class }}",
+              "id": "cond-poor",
+              "leftValue": "={{ $json.body.predicted_class }}",
               "rightValue": "Poor",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "node-if-poor",
-      "name": "KB2A: Là Poor?",
+      "id": "b06df6b9-a720-474f-957c-c476830dd5cb",
+      "name": "If Poor",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [-900, 160]
+      "position": [
+        2560,
+        1280
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const b = $('Webhook').item.json.body;\nconst inputs = b.inputs || {};\nconst now = new Date(b.timestamp || Date.now());\nconst dateVi = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });\nconst pct = v => (v * 100).toFixed(1);\nconst sheetUrl = 'https://docs.google.com/spreadsheets/d/1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM';\nconst risks = [];\nif ((inputs.Delay_from_due_date||0)>15) risks.push('Trả trễ '+inputs.Delay_from_due_date+' ngày');\nif ((inputs.Num_of_Delayed_Payment||0)>10) risks.push(inputs.Num_of_Delayed_Payment+' lần trễ');\nif ((inputs.Debt_to_Income_Annual||0)>0.5) risks.push('DTI '+((inputs.Debt_to_Income_Annual||0)*100).toFixed(0)+'%');\nif ((inputs.Credit_Utilization_Ratio||0)>70) risks.push('Utilization '+(inputs.Credit_Utilization_Ratio||0).toFixed(0)+'%');\nif (inputs.Credit_Mix==='Bad') risks.push('Credit Mix Bad');\nif (inputs.Has_Payday_Loan) risks.push('Có Payday Loan');\nconst subject = '🚨 CẢNH BÁO POOR: '+(b.customer_name||'Ẩn danh')+' — P(Poor)='+pct(b.proba.Poor)+'%';\nconst html = '<div style=\"font-family:Arial;max-width:600px;border:2px solid #e74c3c;border-radius:8px;overflow:hidden;\"><div style=\"background:#e74c3c;padding:16px;color:white;\"><h2 style=\"margin:0;\">🚨 Hồ sơ rủi ro cao — POOR</h2><p style=\"margin:4px 0 0;opacity:0.85;\">'+dateVi+'</p></div><div style=\"padding:20px;\"><table style=\"width:100%;border-collapse:collapse;\"><tr><td style=\"padding:8px;color:#555;\">Khách hàng</td><td style=\"padding:8px;font-weight:bold;\">'+(b.customer_name||'Ẩn danh')+'</td></tr><tr style=\"background:#fafafa;\"><td style=\"padding:8px;color:#555;\">Email</td><td style=\"padding:8px;\">'+(b.customer_email||'—')+'</td></tr><tr><td style=\"padding:8px;color:#555;\">P(Poor)</td><td style=\"padding:8px;font-weight:bold;color:#e74c3c;font-size:18px;\">'+pct(b.proba.Poor)+'%</td></tr><tr style=\"background:#fafafa;\"><td style=\"padding:8px;color:#555;\">P(Good)</td><td style=\"padding:8px;\">'+pct(b.proba.Good)+'%</td></tr></table>'+(risks.length?'<div style=\"margin-top:12px;background:#fff5f5;border-left:3px solid #e74c3c;padding:12px;\"><b style=\"color:#c0392b;\">Yếu tố rủi ro:</b><ul style=\"margin:8px 0;padding-left:20px;\">'+risks.map(r=>'<li>'+r+'</li>').join('')+'</ul></div>':'')+'<div style=\"text-align:center;margin-top:16px;\"><a href=\"'+sheetUrl+'\" style=\"background:#e74c3c;color:white;padding:10px 24px;border-radius:6px;text-decoration:none;font-weight:bold;\">Xem trong Sheets →</a></div></div></div>';\nreturn { json: { subject, alertHTML: html } };"
+        "jsCode": "const b = $input.item.json.body;\nconst pPoor = (b.proba.Poor * 100).toFixed(1);\nconst pStandard = (b.proba.Standard * 100).toFixed(1);\nconst pGood = (b.proba.Good * 100).toFixed(1);\nconst sheetUrl = 'https://docs.google.com/spreadsheets/d/18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU';\nconst subject = `CẢNH BÁO POOR: ${b.customer_name} - P(Poor)=${pPoor}%`;\nconst alertHTML = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family:Arial,sans-serif;background:#f8f9fa;padding:20px'>\n<div style='max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1)'>\n<div style='background:#dc3545;color:#fff;padding:20px;text-align:center'>\n<h2 style='margin:0'>⚠️ CẢNH BÁO RỦI RO TÍN DỤNG</h2>\n<p style='margin:5px 0 0'>Khách hàng được phân loại: POOR</p>\n</div>\n<div style='padding:20px'>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#f8d7da'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #f5c6cb'>📋 Thông tin khách hàng</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Tên</td><td style='padding:8px;border:1px solid #dee2e6'>${b.customer_name}</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Email</td><td style='padding:8px;border:1px solid #dee2e6'>${b.customer_email || 'N/A'}</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Thời gian</td><td style='padding:8px;border:1px solid #dee2e6'>${b.timestamp}</td></tr>\n</table>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#f8d7da'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #f5c6cb'>📊 Xác suất phân loại</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Poor)</td><td style='padding:8px;border:1px solid #dee2e6;color:#dc3545;font-weight:bold'>${pPoor}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Standard)</td><td style='padding:8px;border:1px solid #dee2e6;color:#fd7e14'>${pStandard}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Good)</td><td style='padding:8px;border:1px solid #dee2e6;color:#28a745'>${pGood}%</td></tr>\n</table>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#fff3cd'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #ffc107'>⚡ Chỉ số rủi ro</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Số ngày trễ hạn</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Delay_from_due_date} ngày</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Số lần trễ thanh toán</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Num_of_Delayed_Payment} lần</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Tỷ lệ sử dụng tín dụng</td><td style='padding:8px;border:1px solid #dee2e6'>${(b.inputs.Credit_Utilization_Ratio * 100).toFixed(1)}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Nợ tồn đọng</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Outstanding_Debt.toLocaleString()} VND</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Thu nhập hàng năm</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Annual_Income.toLocaleString()} VND</td></tr>\n</table>\n<div style='text-align:center;margin-top:20px'>\n<a href='${sheetUrl}' style='background:#dc3545;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold'>📊 Xem Google Sheet</a>\n</div>\n</div>\n</div></body></html>`;\nreturn [{json: {subject, alertHTML, to: 'credit.scoring.admin@gmail.com'}}];"
       },
-      "id": "node-build-alert",
+      "id": "5f714418-a86e-4640-8003-0ac2358a7673",
       "name": "Build Alert Email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-640, 80]
+      "position": [
+        2816,
+        1264
+      ]
     },
     {
       "parameters": {
-        "sendTo": "credit.scoring.admin@gmail.com",
+        "sendTo": "linhham1509@gmail.com",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.alertHTML }}",
-        "options": { "appendAttribution": false }
+        "options": {}
       },
-      "id": "node-send-alert",
+      "id": "895eb98b-cc8a-4424-af65-9df8dcd7a01d",
       "name": "Send Alert Email",
       "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2,
-      "position": [-380, 80],
-      "credentials": { "gmailOAuth2": { "id": "jdYX3KVOhYrAhv5O", "name": "Gmail account" } }
+      "typeVersion": 2.1,
+      "position": [
+        3088,
+        1264
+      ],
+      "webhookId": "3c6325c7-490d-4c98-b6ac-bfa359fcfdf0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "G5ESIeZiZnGHofay",
+          "name": "Gmail account 3"
+        }
+      }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
           "conditions": [
             {
-              "id": "if-email-cond",
-              "leftValue": "={{ $('Webhook').item.json.body.customer_email }}",
+              "id": "cond-email",
+              "leftValue": "={{ $json.body.customer_email }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEmpty" }
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
             }
           ],
           "combinator": "and"
         },
         "options": {}
       },
-      "id": "node-if-email",
-      "name": "KB1: Có email?",
+      "id": "6558e9eb-538f-476f-9414-2782815a67c0",
+      "name": "If Has Email",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [-900, 440]
+      "position": [
+        2560,
+        1632
+      ]
     },
     {
       "parameters": {
-        "operation": "read",
-        "documentId": { "__rl": true, "value": "1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "Sheet1", "mode": "name" },
-        "filtersUI": {
-          "values": [
-            {
-              "lookupColumn": "Email",
-              "lookupValue": "={{ $('Webhook').item.json.body.customer_email }}"
-            }
-          ]
+        "documentId": {
+          "__rl": true,
+          "value": "18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU",
+          "mode": ""
         },
-        "options": { "returnAllMatchingRecords": true }
+        "sheetName": {
+          "mode": "name",
+          "value": "Credit_Log"
+        },
+        "options": {}
       },
-      "id": "node-lookup-history",
+      "id": "842ebd02-de64-400f-beac-5a186de1439d",
       "name": "Lookup History",
       "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [-640, 440],
-      "credentials": { "googleSheetsOAuth2Api": { "id": "rK4VJJUbo18S1Rbo", "name": "Google Sheets account" } }
+      "typeVersion": 4.5,
+      "position": [
+        2816,
+        1616
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iShtmhilTJGWdL38",
+          "name": "Google Sheets account 2"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(r => r.json);\nconst b = $('Webhook').item.json.body;\nconst currentEmail = (b.customer_email||'').toLowerCase().trim();\nconst currentTs = b.timestamp;\nconst matched = rows.filter(r => {\n  const e = (r['Email']||'').toLowerCase().trim();\n  return e === currentEmail && r['Thời gian'] !== currentTs;\n});\nmatched.sort((a,b2) => new Date(b2['Thời gian']) - new Date(a['Thời gian']));\nconst isNew = matched.length === 0;\nconst visitCount = matched.length + 1;\nconst prev = matched[0] || null;\nlet previousData = null;\nif (prev) {\n  previousData = {\n    timestamp: prev['Thời gian'],\n    predicted_class: prev['Nhóm dự đoán'],\n    proba: {\n      Poor: parseFloat((prev['Xác suất Poor']||'0').toString().replace(',','.')) || 0,\n      Standard: parseFloat((prev['Xác suất Standard']||'0').toString().replace(',','.')) || 0,\n      Good: parseFloat((prev['Xác suất Good']||'0').toString().replace(',','.')) || 0\n    }\n  };\n}\nconst improving = previousData ? (b.proba.Good - previousData.proba.Good) > 0.05 : false;\nconst stagnant = previousData ? (b.predicted_class==='Poor' && previousData.predicted_class==='Poor' && !improving) : false;\nreturn [{ json: { isNew, visitCount, previousData, improving, stagnant } }];"
+        "jsCode": "const webhookData = $('Webhook').item.json.body;\nconst currentEmail = webhookData.customer_email;\nconst currentTimestamp = webhookData.timestamp;\nconst currentPGood = webhookData.proba.Good;\nconst currentPPoor = webhookData.proba.Poor;\nconst currentClass = webhookData.predicted_class;\nconst allRows = $input.all().map(r => r.json);\nconst emailRows = allRows.filter(r => r.Email && r.Email.toLowerCase().trim() === currentEmail.toLowerCase().trim() && r.Timestamp !== currentTimestamp);\nemailRows.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));\nconst visitCount = emailRows.length + 1;\nconst isNew = emailRows.length === 0;\nlet previousData = null;\nlet improving = false;\nlet stagnant = false;\nif (!isNew && emailRows.length > 0) {\n  const prev = emailRows[0];\n  const prevPGood = parseFloat(prev.P_Good) / 100;\n  const prevPPoor = parseFloat(prev.P_Poor) / 100;\n  previousData = {\n    timestamp: prev.Timestamp,\n    predicted_class: prev.Result,\n    p_poor: prevPPoor,\n    p_standard: parseFloat(prev.P_Standard) / 100,\n    p_good: prevPGood\n  };\n  improving = (currentPGood - prevPGood) > 0.05;\n  stagnant = currentClass === 'Poor' && prev.Result === 'Poor' && !improving;\n}\nreturn [{json: {isNew, visitCount, previousData, improving, stagnant}}];"
       },
-      "id": "node-compare-history",
-      "name": "KB1: Compare History",
+      "id": "3ff0d2b4-7be9-4ced-8c52-e27322740a30",
+      "name": "Compare History",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-380, 440]
+      "position": [
+        3088,
+        1616
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const b = $('Webhook').item.json.body;\nconst hist = $('KB1: Compare History').item.json;\nconst inputs = b.inputs || {};\nconst pct = v => (v * 100).toFixed(1);\nconst now = new Date(b.timestamp || Date.now());\nconst dateVi = now.toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });\nconst cls = b.predicted_class || 'Unknown';\nconst clsViMap = { Poor: 'Rủi ro cao', Standard: 'Trung bình', Good: 'Tốt' };\nconst clsVi = clsViMap[cls] || cls;\nconst clsColorMap = { Poor: '#e74c3c', Standard: '#f39c12', Good: '#27ae60' };\nconst clsColor = clsColorMap[cls] || '#888';\nconst visitCount = hist.visitCount || 1;\nconst isNew = hist.isNew !== false;\nconst improving = !!hist.improving;\nconst stagnant = !!hist.stagnant;\nconst prev = hist.previousData;\nconst greeting = isNew ? 'Đây là lần đầu tiên bạn sử dụng hệ thống của chúng tôi.' : 'Đây là lần thứ <b>'+visitCount+'</b> bạn sử dụng hệ thống. Cảm ơn bạn đã quay lại!';\nlet bannerHTML = '';\nif (!isNew && prev) {\n  const clsOrder = { Poor: 0, Standard: 1, Good: 2 };\n  if ((clsOrder[cls]||0) > (clsOrder[prev.predicted_class]||0)) {\n    bannerHTML = '<div style=\"background:#d4efdf;border-left:4px solid #27ae60;padding:12px;margin:12px 0;\">🎉 <b>Chúc mừng!</b> Hạng tín dụng nâng từ '+prev.predicted_class+' lên '+cls+'!</div>';\n  } else if ((clsOrder[cls]||0) < (clsOrder[prev.predicted_class]||0)) {\n    bannerHTML = '<div style=\"background:#fde8e8;border-left:4px solid #e74c3c;padding:12px;margin:12px 0;\">⚠️ <b>Lưu ý:</b> Hạng giảm từ '+prev.predicted_class+' xuống '+cls+'.</div>';\n  } else if (improving) {\n    bannerHTML = '<div style=\"background:#eaf4fb;border-left:4px solid #3498db;padding:12px;margin:12px 0;\">📈 P(Good) tăng >5% so với lần trước.</div>';\n  }\n}\nlet compareHTML = '';\nif (!isNew && prev) {\n  const dP = (b.proba.Poor - prev.proba.Poor)*100, dS = (b.proba.Standard - prev.proba.Standard)*100, dG = (b.proba.Good - prev.proba.Good)*100;\n  const ar = v => v>0.05?'<span style=\"color:#e74c3c\">▲'+v.toFixed(1)+'%</span>':v<-0.05?'<span style=\"color:#27ae60\">▼'+Math.abs(v).toFixed(1)+'%</span>':'<span style=\"color:#888\">—</span>';\n  compareHTML = '<h3>So sánh lần trước ('+new Date(prev.timestamp).toLocaleDateString('vi-VN')+')</h3><table style=\"width:100%;border-collapse:collapse;\"><tr style=\"background:#f0f0f0;\"><th style=\"padding:6px;text-align:left;\">Nhóm</th><th style=\"padding:6px;text-align:right;\">Trước</th><th style=\"padding:6px;text-align:right;\">Nay</th><th style=\"padding:6px;text-align:right;\">Δ</th></tr><tr><td style=\"padding:6px;color:#e74c3c;\">Poor</td><td style=\"padding:6px;text-align:right;\">'+pct(prev.proba.Poor)+'%</td><td style=\"padding:6px;text-align:right;\">'+pct(b.proba.Poor)+'%</td><td style=\"padding:6px;text-align:right;\">'+ar(dP)+'</td></tr><tr style=\"background:#fafafa;\"><td style=\"padding:6px;color:#f39c12;\">Standard</td><td style=\"padding:6px;text-align:right;\">'+pct(prev.proba.Standard)+'%</td><td style=\"padding:6px;text-align:right;\">'+pct(b.proba.Standard)+'%</td><td style=\"padding:6px;text-align:right;\">'+ar(dS)+'</td></tr><tr><td style=\"padding:6px;color:#27ae60;\">Good</td><td style=\"padding:6px;text-align:right;\">'+pct(prev.proba.Good)+'%</td><td style=\"padding:6px;text-align:right;\">'+pct(b.proba.Good)+'%</td><td style=\"padding:6px;text-align:right;\">'+ar(dG)+'</td></tr></table>';\n}\nlet adviceHTML = '';\nif (cls==='Poor') {\n  const issues = [];\n  if ((inputs.Delay_from_due_date||0)>15) issues.push('Thanh toán đang trễ '+inputs.Delay_from_due_date+' ngày — cần thanh toán ngay');\n  if ((inputs.Num_of_Delayed_Payment||0)>10) issues.push('Có '+inputs.Num_of_Delayed_Payment+' lần trễ hạn — thiết lập nhắc nhở tự động');\n  if ((inputs.Debt_to_Income_Annual||0)>0.5) issues.push('Tỷ lệ nợ/thu nhập '+((inputs.Debt_to_Income_Annual||0)*100).toFixed(0)+'% — cần giảm dư nợ');\n  if ((inputs.Credit_Utilization_Ratio||0)>70) issues.push('Credit Utilization '+(inputs.Credit_Utilization_Ratio||0).toFixed(0)+'% — giảm xuống dưới 30%');\n  if (inputs.Credit_Mix==='Bad') issues.push('Credit Mix xấu — đa dạng hóa tín dụng');\n  if (inputs.Has_Payday_Loan) issues.push('Có Payday Loan — ưu tiên trả trước');\n  if (stagnant) {\n    adviceHTML = '<div style=\"background:#fff3cd;border-left:4px solid #f39c12;padding:12px;margin:12px 0;\"><b>⚠️ Chưa có cải thiện so với lần trước.</b> Hãy tập trung vào <b>1 việc</b> trước: '+(issues[0]||'thanh toán đúng hạn')+'</div>';\n  } else if (isNew) {\n    adviceHTML = '<h3 style=\"color:#e74c3c;\">🔴 Vấn đề khẩn cần xử lý</h3>'+(issues.length?'<ul>'+issues.map(i=>'<li>'+i+'</li>').join('')+'</ul>':'')+'<p><b>Lộ trình cải thiện:</b></p><ul><li><b>1-3 tháng:</b> Thanh toán đúng hạn 100%, giảm utilization</li><li><b>3-6 tháng:</b> Giảm dư nợ, hạn chế vay mới</li><li><b>6-12 tháng:</b> Xây dựng lịch sử tín dụng sạch</li></ul>';\n  } else if (improving) {\n    adviceHTML = '<div style=\"background:#d4efdf;padding:12px;border-radius:4px;\">💪 Bạn đang tiến bộ tốt! Tiếp tục duy trì các thói quen tốt. '+( issues.length?'Vẫn còn: <i>'+issues[0]+'</i>':'')+'</div>';\n  } else {\n    adviceHTML = '<ul>'+issues.map(i=>'<li>'+i+'</li>').join('')+'</ul>';\n  }\n} else if (cls==='Standard') {\n  adviceHTML = '<h3 style=\"color:#f39c12;\">📊 Rào cản để đạt hạng Good</h3><ul><li>Giữ Credit Utilization dưới 30%</li><li>Không trễ hạn bất kỳ khoản nào</li><li>Duy trì DTI dưới 40%</li><li>Đa dạng hóa danh mục tín dụng</li></ul>';\n} else if (cls==='Good') {\n  adviceHTML = '<h3 style=\"color:#27ae60;\">✅ Tín dụng tốt — Duy trì và phát triển</h3><ul><li>Tiếp tục thanh toán đúng hạn</li><li>Giữ utilization dưới 30%</li><li>Bạn có thể xem xét: thẻ tín dụng ưu đãi, vay mua nhà lãi suất thấp</li></ul>';\n}\nconst subject = '[Lần '+visitCount+'] Kết quả tín dụng: '+clsVi+' ('+cls+')';\nconst emailHTML = '<!DOCTYPE html><html><body style=\"margin:0;padding:0;background:#f4f6f9;\"><div style=\"font-family:Arial,sans-serif;max-width:640px;margin:20px auto;background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);\"><div style=\"background:'+clsColor+';padding:20px;color:white;\"><h2 style=\"margin:0;\">Kết quả Đánh giá Tín dụng</h2><p style=\"margin:4px 0 0;opacity:0.85;\">'+dateVi+'</p></div><div style=\"padding:24px;\"><p>Xin chào <b>'+(b.customer_name||'bạn')+'</b>,</p><p>'+greeting+'</p>'+bannerHTML+'<div style=\"background:#f8f9fa;border-radius:8px;padding:16px;text-align:center;margin:16px 0;\"><div style=\"font-size:14px;color:#666;\">Phân loại tín dụng</div><div style=\"font-size:32px;font-weight:bold;color:'+clsColor+';\">'+clsVi+'</div><div style=\"font-size:13px;color:#888;\">('+cls+')</div></div><h3 style=\"border-bottom:1px solid #eee;padding-bottom:6px;\">Xác suất chi tiết</h3><table style=\"width:100%;border-collapse:collapse;\"><tr style=\"background:#f8f9fa;\"><td style=\"padding:8px;color:#e74c3c;\">🔴 Poor</td><td style=\"padding:8px;text-align:right;font-weight:bold;\">'+pct(b.proba.Poor)+'%</td></tr><tr><td style=\"padding:8px;color:#f39c12;\">🟡 Standard</td><td style=\"padding:8px;text-align:right;font-weight:bold;\">'+pct(b.proba.Standard)+'%</td></tr><tr style=\"background:#f8f9fa;\"><td style=\"padding:8px;color:#27ae60;\">🟢 Good</td><td style=\"padding:8px;text-align:right;font-weight:bold;\">'+pct(b.proba.Good)+'%</td></tr></table>'+compareHTML+adviceHTML+'<hr style=\"margin:20px 0;border:none;border-top:1px solid #eee;\"><p style=\"color:#999;font-size:12px;text-align:center;\">Email tự động — AI Credit Classification — Đồ án học tập</p></div></div></body></html>';\nreturn [{ json: { subject, emailHTML } }];"
+        "jsCode": "const b = $('Webhook').item.json.body;\nconst hist = $('Compare History').item.json;\nconst pPoor = (b.proba.Poor * 100).toFixed(1);\nconst pStandard = (b.proba.Standard * 100).toFixed(1);\nconst pGood = (b.proba.Good * 100).toFixed(1);\nconst cls = b.predicted_class;\nconst visitNum = hist.visitCount || 1;\nconst clsVi = cls === 'Poor' ? 'Rủi ro Cao' : (cls === 'Standard' ? 'Trung bình' : 'Tốt');\nconst cardColor = cls === 'Poor' ? '#dc3545' : (cls === 'Standard' ? '#fd7e14' : '#28a745');\nconst cardIcon = cls === 'Poor' ? '🔴' : (cls === 'Standard' ? '🟠' : '🟢');\nconst greeting = hist.isNew\n  ? `Xin chào <strong>${b.customer_name}</strong>,<br>Đây là lần đầu tiên bạn sử dụng dịch vụ đánh giá tín dụng của chúng tôi.`\n  : `Xin chào <strong>${b.customer_name}</strong>,<br>Đây là lần thứ <strong>${visitNum}</strong> bạn sử dụng dịch vụ đánh giá tín dụng.`;\nlet compareSection = '';\nif (!hist.isNew && hist.previousData) {\n  const prev = hist.previousData;\n  const deltaPoor = (b.proba.Poor - prev.p_poor) * 100;\n  const deltaGood = (b.proba.Good - prev.p_good) * 100;\n  const deltaSign = (v) => v > 0 ? '+' : '';\n  const classChanged = prev.predicted_class !== cls;\n  let bannerMsg = '';\n  if (hist.improving) bannerMsg = `<div style='background:#d4edda;border:1px solid #c3e6cb;padding:12px;border-radius:5px;margin-bottom:15px;text-align:center'>🎉 <strong>Chúc mừng!</strong> Điểm tín dụng của bạn đã được cải thiện đáng kể!</div>`;\n  else if (hist.stagnant) bannerMsg = `<div style='background:#f8d7da;border:1px solid #f5c6cb;padding:12px;border-radius:5px;margin-bottom:15px;text-align:center'>⚠️ <strong>Lưu ý:</strong> Điểm tín dụng chưa được cải thiện so với lần trước.</div>`;\n  else if (classChanged) bannerMsg = `<div style='background:#cce5ff;border:1px solid #b8daff;padding:12px;border-radius:5px;margin-bottom:15px;text-align:center'>📈 <strong>Thay đổi:</strong> Phân loại của bạn đã thay đổi từ <strong>${prev.predicted_class}</strong> sang <strong>${cls}</strong>.</div>`;\n  compareSection = `${bannerMsg}<table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#e2e3e5'><th style='padding:10px;text-align:left;border:1px solid #d6d8db' colspan='3'>📈 So sánh với lần trước (${prev.timestamp})</th></tr><tr><th style='padding:8px;border:1px solid #dee2e6;background:#f8f9fa'>Chỉ số</th><th style='padding:8px;border:1px solid #dee2e6;background:#f8f9fa'>Lần trước</th><th style='padding:8px;border:1px solid #dee2e6;background:#f8f9fa'>Lần này</th></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Phân loại</td><td style='padding:8px;border:1px solid #dee2e6'>${prev.predicted_class}</td><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold;color:${cardColor}'>${cls}</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>P(Poor)</td><td style='padding:8px;border:1px solid #dee2e6'>${(prev.p_poor * 100).toFixed(1)}%</td><td style='padding:8px;border:1px solid #dee2e6'>${pPoor}% <span style='color:${deltaPoor > 0 ? \"#dc3545\" : \"#28a745\"}'>(${deltaSign(deltaPoor)}${deltaPoor.toFixed(1)}%)</span></td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>P(Good)</td><td style='padding:8px;border:1px solid #dee2e6'>${(prev.p_good * 100).toFixed(1)}%</td><td style='padding:8px;border:1px solid #dee2e6'>${pGood}% <span style='color:${deltaGood > 0 ? \"#28a745\" : \"#dc3545\"}'>(${deltaSign(deltaGood)}${deltaGood.toFixed(1)}%)</span></td></tr></table>`;\n}\nlet suggestions = '';\nif (cls === 'Poor' && hist.isNew) {\n  suggestions = `<div style='background:#fff3cd;border:1px solid #ffc107;padding:15px;border-radius:5px;margin-bottom:20px'><h4 style='color:#856404;margin:0 0 10px'>🚨 Vấn đề cần xử lý khẩn cấp</h4><ul style='margin:0;padding-left:20px'><li>Thanh toán ngay các khoản nợ quá hạn</li><li>Giảm tỷ lệ sử dụng tín dụng xuống dưới 30%</li><li>Lập kế hoạch trả nợ có hệ thống</li></ul><h4 style='color:#856404;margin:15px 0 10px'>🗓️ Lộ trình cải thiện 6-12 tháng</h4><ul style='margin:0;padding-left:20px'><li><strong>Tháng 1-3:</strong> Thanh toán đúng hạn 100%, giảm 20% nợ tồn đọng</li><li><strong>Tháng 4-6:</strong> Không phát sinh nợ mới, tăng thu nhập thụ động</li><li><strong>Tháng 7-12:</strong> Duy trì thói quen tốt, tái đánh giá tín dụng</li></ul></div>`;\n} else if (cls === 'Poor' && hist.stagnant) {\n  suggestions = `<div style='background:#f8d7da;border:1px solid #f5c6cb;padding:15px;border-radius:5px;margin-bottom:20px'><h4 style='color:#721c24;margin:0 0 10px'>⚠️ Chưa có cải thiện đáng kể</h4><p>Dù đã qua một thời gian, điểm tín dụng của bạn vẫn chưa cải thiện. Hãy xem xét tư vấn tài chính chuyên nghiệp để được hỗ trợ.</p></div>`;\n} else if (cls === 'Poor' && hist.improving) {\n  suggestions = `<div style='background:#d4edda;border:1px solid #c3e6cb;padding:15px;border-radius:5px;margin-bottom:20px'><h4 style='color:#155724;margin:0 0 10px'>👏 Bạn đang tiến bộ!</h4><p>Điểm tín dụng đang cải thiện. Hãy tiếp tục duy trì các thói quen tài chính tốt và kiên trì theo lộ trình đã đề ra.</p></div>`;\n} else if (cls === 'Standard') {\n  suggestions = `<div style='background:#cce5ff;border:1px solid #b8daff;padding:15px;border-radius:5px;margin-bottom:20px'><h4 style='color:#004085;margin:0 0 10px'>📋 Rào cản để lên Good</h4><ul style='margin:0;padding-left:20px'><li>Tăng lịch sử tín dụng lên trên 24 tháng</li><li>Đảm bảo 0 ngày trễ hạn trong 12 tháng tới</li><li>Giảm tỷ lệ sử dụng tín dụng xuống dưới 20%</li><li>Đa dạng hóa danh mục tín dụng</li></ul></div>`;\n} else {\n  suggestions = `<div style='background:#d4edda;border:1px solid #c3e6cb;padding:15px;border-radius:5px;margin-bottom:20px'><h4 style='color:#155724;margin:0 0 10px'>🌟 Duy trì điểm tín dụng xuất sắc</h4><ul style='margin:0;padding-left:20px'><li>Tiếp tục thanh toán đúng hạn 100%</li><li>Bạn đủ điều kiện cho các sản phẩm tín dụng ưu đãi</li><li>Có thể xem xét tăng hạn mức tín dụng</li><li>Cân nhắc các khoản vay lãi suất thấp</li></ul></div>`;\n}\nconst subject = `[Lần ${visitNum}] Kết quả tín dụng: ${clsVi} (${cls})`;\nconst emailHTML = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family:Arial,sans-serif;background:#f8f9fa;padding:20px'><div style='max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1)'><div style='background:${cardColor};color:#fff;padding:20px;text-align:center'><h2 style='margin:0'>${cardIcon} Kết quả Đánh giá Tín dụng</h2><p style='margin:5px 0 0;font-size:14px'>${b.timestamp}</p></div><div style='padding:20px'><p style='margin-bottom:20px'>${greeting}</p><div style='background:${cardColor};color:#fff;padding:20px;border-radius:8px;text-align:center;margin-bottom:20px'><h3 style='margin:0 0 5px'>Phân loại: ${clsVi} (${cls})</h3></div><table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#f8f9fa'><th style='padding:10px;text-align:left;border:1px solid #dee2e6' colspan='2'>📊 Xác suất phân loại</th></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>🔴 Poor (Rủi ro cao)</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right;font-weight:bold;color:#dc3545'>${pPoor}%</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>🟠 Standard (Trung bình)</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right;font-weight:bold;color:#fd7e14'>${pStandard}%</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>🟢 Good (Tốt)</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right;font-weight:bold;color:#28a745'>${pGood}%</td></tr></table>${compareSection}${suggestions}</div></div></body></html>`;\nreturn [{json: {subject, emailHTML, to: b.customer_email}}];"
       },
-      "id": "node-build-email",
+      "id": "0074ee0d-9130-4265-a0e3-a59099f45b9f",
       "name": "Build Customer Email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [0, 440]
+      "position": [
+        3456,
+        1616
+      ]
     },
     {
       "parameters": {
-        "sendTo": "={{ $('Webhook').item.json.body.customer_email }}",
+        "sendTo": "={{ $json.to }}",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.emailHTML }}",
-        "options": { "appendAttribution": false }
-      },
-      "id": "node-send-email",
-      "name": "Send Customer Email",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2,
-      "position": [260, 440],
-      "credentials": { "gmailOAuth2": { "id": "jdYX3KVOhYrAhv5O", "name": "Gmail account" } }
-    },
-    {
-      "parameters": {
-        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 8 * * 1" }] }
-      },
-      "id": "node-schedule",
-      "name": "Schedule Weekly Report",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1,
-      "position": [-1400, 700]
-    },
-    {
-      "parameters": {
-        "operation": "read",
-        "documentId": { "__rl": true, "value": "1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "Sheet1", "mode": "name" },
         "options": {}
       },
-      "id": "node-read-logs",
+      "id": "eb0edefe-7e75-4bb4-809a-1bc10ff103aa",
+      "name": "Send Customer Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3728,
+        1616
+      ],
+      "webhookId": "808f6ccf-4875-4c0b-958c-bab87e7905a9",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "G5ESIeZiZnGHofay",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "43d6a7f8-e2ff-4f00-8971-2ae5e85ed699",
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        2064,
+        1888
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU",
+          "mode": ""
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Credit_Log"
+        },
+        "options": {}
+      },
+      "id": "09ca7e3c-65f1-43db-92b2-254b84d295d3",
       "name": "Read All Logs",
       "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [-1160, 700],
-      "credentials": { "googleSheetsOAuth2Api": { "id": "rK4VJJUbo18S1Rbo", "name": "Google Sheets account" } }
+      "typeVersion": 4.5,
+      "position": [
+        2304,
+        1888
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iShtmhilTJGWdL38",
+          "name": "Google Sheets account 2"
+        }
+      }
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(r => r.json);\nconst now = new Date();\nconst sevenDaysAgo = new Date(now.getTime() - 7*24*60*60*1000);\nconst recent = rows.filter(r => {\n  const ts = new Date(r['Thời gian']);\n  return !isNaN(ts) && ts >= sevenDaysAgo;\n});\nconst total = recent.length;\nconst poor = recent.filter(r => r['Nhóm dự đoán']==='Poor').length;\nconst standard = recent.filter(r => r['Nhóm dự đoán']==='Standard').length;\nconst good = recent.filter(r => r['Nhóm dự đoán']==='Good').length;\nconst withEmail = recent.filter(r => r['Email'] && r['Email'].toString().trim()!=='').length;\nconst withoutEmail = total - withEmail;\nconst emailMap = {};\nrecent.forEach(r => {\n  const em = (r['Email']||'').toString().toLowerCase().trim();\n  if (em) emailMap[em] = (emailMap[em]||0) + 1;\n});\nconst uniqueEmails = Object.keys(emailMap).length;\nconst returnCustomers = Object.values(emailMap).filter(v => v >= 2).length;\nconst returnRate = uniqueEmails > 0 ? ((returnCustomers / uniqueEmails)*100).toFixed(1) : '0.0';\nconst avgPerDay = (total / 7).toFixed(1);\nconst dayMap = {};\nrecent.forEach(r => {\n  const ts = new Date(r['Thời gian']);\n  if (!isNaN(ts)) {\n    const day = ts.toLocaleDateString('vi-VN');\n    dayMap[day] = (dayMap[day]||0) + 1;\n  }\n});\nlet peakDay = '—', peakCount = 0;\nObject.entries(dayMap).forEach(([d, c]) => { if (c > peakCount) { peakCount = c; peakDay = d; } });\nconst topEmails = Object.entries(emailMap).sort((a,b) => b[1]-a[1]).slice(0,5);\nconst weekStr = sevenDaysAgo.toLocaleDateString('vi-VN')+' - '+now.toLocaleDateString('vi-VN');\nconst pctOf = (n,d) => d>0 ? (n/d*100).toFixed(1)+'%' : '0%';\nconst reportHTML = '<!DOCTYPE html><html><body style=\"font-family:Arial;max-width:700px;margin:20px auto;background:#f4f6f9;\"><div style=\"background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);\"><div style=\"background:#2c3e50;padding:20px;color:white;\"><h2 style=\"margin:0;\">📊 Báo cáo tuần — AI Credit Scoring</h2><p style=\"margin:4px 0 0;opacity:0.8;\">'+weekStr+'</p></div><div style=\"padding:24px;\"><h3 style=\"color:#2c3e50;\">Tổng quan KPI</h3><table style=\"width:100%;border-collapse:collapse;\"><tr style=\"background:#2c3e50;color:white;\"><th style=\"padding:10px;text-align:left;\">Chỉ số</th><th style=\"padding:10px;text-align:right;\">Giá trị</th></tr><tr><td style=\"padding:8px;\">Tổng lượt đánh giá</td><td style=\"padding:8px;text-align:right;font-weight:bold;\">'+total+'</td></tr><tr style=\"background:#f8f9fa;\"><td style=\"padding:8px;\">Trung bình lượt/ngày</td><td style=\"padding:8px;text-align:right;\">'+avgPerDay+'</td></tr><tr><td style=\"padding:8px;\">Ngày cao điểm</td><td style=\"padding:8px;text-align:right;\">'+peakDay+' ('+peakCount+' lượt)</td></tr></table><h3 style=\"color:#2c3e50;margin-top:20px;\">Phân bố nhóm tín dụng</h3><table style=\"width:100%;border-collapse:collapse;\"><tr style=\"background:#f0f0f0;\"><th style=\"padding:8px;text-align:left;\">Nhóm</th><th style=\"padding:8px;text-align:right;\">Số lượng</th><th style=\"padding:8px;text-align:right;\">Tỷ lệ</th></tr><tr><td style=\"padding:8px;color:#e74c3c;\">🔴 Poor</td><td style=\"padding:8px;text-align:right;\">'+poor+'</td><td style=\"padding:8px;text-align:right;\">'+pctOf(poor,total)+'</td></tr><tr style=\"background:#f8f9fa;\"><td style=\"padding:8px;color:#f39c12;\">🟡 Standard</td><td style=\"padding:8px;text-align:right;\">'+standard+'</td><td style=\"padding:8px;text-align:right;\">'+pctOf(standard,total)+'</td></tr><tr><td style=\"padding:8px;color:#27ae60;\">🟢 Good</td><td style=\"padding:8px;text-align:right;\">'+good+'</td><td style=\"padding:8px;text-align:right;\">'+pctOf(good,total)+'</td></tr></table><h3 style=\"color:#2c3e50;margin-top:20px;\">Engagement khách hàng</h3><table style=\"width:100%;border-collapse:collapse;\"><tr style=\"background:#f0f0f0;\"><th style=\"padding:8px;text-align:left;\">Chỉ số</th><th style=\"padding:8px;text-align:right;\">Giá trị</th></tr><tr><td style=\"padding:8px;\">Có email</td><td style=\"padding:8px;text-align:right;\">'+withEmail+'</td></tr><tr style=\"background:#f8f9fa;\"><td style=\"padding:8px;\">Không có email</td><td style=\"padding:8px;text-align:right;\">'+withoutEmail+'</td></tr><tr><td style=\"padding:8px;\">Email duy nhất</td><td style=\"padding:8px;text-align:right;\">'+uniqueEmails+'</td></tr><tr style=\"background:#f8f9fa;\"><td style=\"padding:8px;\">Khách quay lại (≥2 lượt)</td><td style=\"padding:8px;text-align:right;\">'+returnCustomers+' ('+returnRate+'%)</td></tr></table>'+(topEmails.length?'<h3 style=\"color:#2c3e50;margin-top:20px;\">Top 5 khách hàng</h3><table style=\"width:100%;border-collapse:collapse;\"><tr style=\"background:#f0f0f0;\"><th style=\"padding:8px;text-align:left;\">Email</th><th style=\"padding:8px;text-align:right;\">Số lượt</th></tr>'+topEmails.map((e,i)=>'<tr'+(i%2?' style=\"background:#f8f9fa;\"':'')+'>td style=\"padding:8px;\">'+e[0]+'</td><td style=\"padding:8px;text-align:right;\">'+e[1]+'</td></tr>').join('')+'</table>':'')+'<hr style=\"margin:20px 0;\"><p style=\"color:#999;font-size:12px;text-align:center;\">Báo cáo tự động — AI Credit Classification — Đồ án học tập</p></div></div></body></html>';\nconst subject = '[Báo cáo tuần] AI Credit Scoring — '+weekStr;\nreturn [{ json: { subject, reportHTML, total, poor, standard, good, withEmail, returnCustomers, returnRate, avgPerDay, weekStr } }];"
+        "jsCode": "const now = new Date();\nconst sevenDaysAgo = new Date(now);\nsevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);\nconst allRows = $input.all().map(r => r.json);\nconst recentRows = allRows.filter(r => {\n  if (!r.Timestamp) return false;\n  const ts = new Date(r.Timestamp);\n  return ts >= sevenDaysAgo && ts <= now;\n});\nconst total = recentRows.length;\nconst poor = recentRows.filter(r => r.Result === 'Poor').length;\nconst standard = recentRows.filter(r => r.Result === 'Standard').length;\nconst good = recentRows.filter(r => r.Result === 'Good').length;\nconst withEmail = recentRows.filter(r => r.Email && r.Email.trim() !== '').length;\nconst uniqueEmails = [...new Set(recentRows.filter(r => r.Email).map(r => r.Email.toLowerCase().trim()))];\nconst allEmails = allRows.filter(r => r.Email).map(r => r.Email.toLowerCase().trim());\nconst emailCounts = {};\nallEmails.forEach(e => { emailCounts[e] = (emailCounts[e] || 0) + 1; });\nconst returnCustomers = uniqueEmails.filter(e => (emailCounts[e] || 0) > 1).length;\nconst returnRate = uniqueEmails.length > 0 ? ((returnCustomers / uniqueEmails.length) * 100).toFixed(1) + '%' : '0%';\nconst avgPerDay = (total / 7).toFixed(1);\nconst dayMap = {};\nrecentRows.forEach(r => {\n  const day = r.Timestamp ? r.Timestamp.split('T')[0].split(' ')[0] : 'N/A';\n  dayMap[day] = (dayMap[day] || 0) + 1;\n});\nconst peakDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0] || ['N/A', 0];\nconst topEmailsSorted = Object.entries(emailCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);\nconst weekStart = sevenDaysAgo.toISOString().split('T')[0];\nconst weekEnd = now.toISOString().split('T')[0];\nconst weekStr = `${weekStart} - ${weekEnd}`;\nconst poorPct = total > 0 ? ((poor / total) * 100).toFixed(1) : '0';\nconst standardPct = total > 0 ? ((standard / total) * 100).toFixed(1) : '0';\nconst goodPct = total > 0 ? ((good / total) * 100).toFixed(1) : '0';\nconst topEmailsHTML = topEmailsSorted.map((e, i) => `<tr><td style='padding:8px;border:1px solid #dee2e6'>${i + 1}</td><td style='padding:8px;border:1px solid #dee2e6'>${e[0]}</td><td style='padding:8px;border:1px solid #dee2e6;text-align:center'>${e[1]}</td></tr>`).join('');\nconst reportHTML = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family:Arial,sans-serif;background:#f8f9fa;padding:20px'><div style='max-width:700px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1)'><div style='background:#343a40;color:#fff;padding:20px;text-align:center'><h2 style='margin:0'>📊 Báo cáo Tín dụng Hàng tuần</h2><p style='margin:5px 0 0'>Tuần: ${weekStr}</p></div><div style='padding:20px'><div style='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:15px;margin-bottom:20px'><div style='background:#007bff;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${total}</h3><p style='margin:0;font-size:12px'>Tổng đánh giá</p></div><div style='background:#dc3545;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${poor}</h3><p style='margin:0;font-size:12px'>Poor (${poorPct}%)</p></div><div style='background:#fd7e14;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${standard}</h3><p style='margin:0;font-size:12px'>Standard (${standardPct}%)</p></div><div style='background:#28a745;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${good}</h3><p style='margin:0;font-size:12px'>Good (${goodPct}%)</p></div></div><table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#343a40;color:#fff'><th style='padding:10px;text-align:left' colspan='2'>📈 KPIs Tuần này</th></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Có email</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${withEmail}</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Khách quay lại</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${returnCustomers} (${returnRate})</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Trung bình/ngày</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${avgPerDay}</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Ngày cao điểm</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${peakDay[0]} (${peakDay[1]} đánh giá)</td></tr></table><table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#343a40;color:#fff'><th style='padding:10px'>STT</th><th style='padding:10px;text-align:left'>Email</th><th style='padding:10px'>Số lần</th></tr>${topEmailsHTML}</table></div></div></body></html>`;\nconst subject = `Báo cáo Tín dụng Tuần ${weekStr}`;\nreturn [{json: {subject, reportHTML, total, poor, standard, good, withEmail, returnRate, avgPerDay, weekStr}}];"
       },
-      "id": "node-calc-stats",
-      "name": "Calc Weekly Stats",
+      "id": "897704c2-ec5d-4c51-965b-e8a2b14aa8e4",
+      "name": "Calculate Weekly Stats",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-900, 700]
+      "position": [
+        2560,
+        1888
+      ]
     },
     {
       "parameters": {
-        "sendTo": "credit.scoring.admin@gmail.com",
+        "sendTo": "linhham1509@gmail.com",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.reportHTML }}",
-        "options": { "appendAttribution": false }
+        "options": {}
       },
-      "id": "node-send-report",
+      "id": "30a51c17-f87d-465f-880c-8a004eb978e1",
       "name": "Send Weekly Report",
       "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2,
-      "position": [-640, 700],
-      "credentials": { "gmailOAuth2": { "id": "jdYX3KVOhYrAhv5O", "name": "Gmail account" } }
+      "typeVersion": 2.1,
+      "position": [
+        2816,
+        1968
+      ],
+      "webhookId": "884c9526-bdc2-46f2-8ac9-2ea7043c6307",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "aOXSHTLnRgwF5OGb",
+          "name": "Gmail account 2"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "append",
-        "documentId": { "__rl": true, "value": "1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "Weekly Report", "mode": "name" },
+        "documentId": {
+          "__rl": true,
+          "value": "18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU",
+          "mode": ""
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Weekly_Report"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Tuần": "={{ $json.weekStr }}",
-            "Tổng lượt": "={{ $json.total }}",
+            "Week": "={{ $json.weekStr }}",
+            "Total": "={{ $json.total }}",
             "Poor": "={{ $json.poor }}",
             "Standard": "={{ $json.standard }}",
+            "With_Email": "={{ $json.withEmail }}",
             "Good": "={{ $json.good }}",
-            "Có email": "={{ $json.withEmail }}",
-            "Khách quay lại %": "={{ $json.returnRate }}",
-            "TB lượt/ngày": "={{ $json.avgPerDay }}"
+            "Return_Rate": "={{ $json.returnRate }}",
+            "Avg_Per_Day": "={{ $json.avgPerDay }}"
           },
           "matchingColumns": [],
-          "schema": []
+          "schema": [
+            {
+              "id": "Week",
+              "displayName": "Week",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Poor",
+              "displayName": "Poor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Standard",
+              "displayName": "Standard",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Good",
+              "displayName": "Good",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "With_Email",
+              "displayName": "With_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Return_Rate",
+              "displayName": "Return_Rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Avg_Per_Day",
+              "displayName": "Avg_Per_Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
-      "id": "node-save-weekly",
-      "name": "Save Weekly Summary",
+      "id": "27274216-39be-4f91-902c-52f6be17285c",
+      "name": "Save Weekly Report",
       "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4,
-      "position": [-380, 700],
-      "credentials": { "googleSheetsOAuth2Api": { "id": "rK4VJJUbo18S1Rbo", "name": "Google Sheets account" } }
+      "typeVersion": 4.5,
+      "position": [
+        2816,
+        1824
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iShtmhilTJGWdL38",
+          "name": "Google Sheets account 2"
+        }
+      }
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook": {
       "main": [
         [
-          { "node": "Append Log to Sheet", "type": "main", "index": 0 }
+          {
+            "node": "Append Credit Log",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Append Log to Sheet": {
+    "Append Credit Log": {
       "main": [
         [
-          { "node": "KB2A: Là Poor?", "type": "main", "index": 0 },
-          { "node": "KB1: Có email?", "type": "main", "index": 0 }
+          {
+            "node": "If Poor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Has Email",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "KB2A: Là Poor?": {
+    "If Poor": {
       "main": [
         [
-          { "node": "Build Alert Email", "type": "main", "index": 0 }
-        ],
-        []
+          {
+            "node": "Build Alert Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Alert Email": {
       "main": [
         [
-          { "node": "Send Alert Email", "type": "main", "index": 0 }
+          {
+            "node": "Send Alert Email",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "KB1: Có email?": {
+    "If Has Email": {
       "main": [
         [
-          { "node": "Lookup History", "type": "main", "index": 0 }
-        ],
-        []
+          {
+            "node": "Lookup History",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Lookup History": {
       "main": [
         [
-          { "node": "KB1: Compare History", "type": "main", "index": 0 }
+          {
+            "node": "Compare History",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "KB1: Compare History": {
+    "Compare History": {
       "main": [
         [
-          { "node": "Build Customer Email", "type": "main", "index": 0 }
+          {
+            "node": "Build Customer Email",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Build Customer Email": {
       "main": [
         [
-          { "node": "Send Customer Email", "type": "main", "index": 0 }
+          {
+            "node": "Send Customer Email",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Schedule Weekly Report": {
+    "Weekly Schedule": {
       "main": [
         [
-          { "node": "Read All Logs", "type": "main", "index": 0 }
+          {
+            "node": "Read All Logs",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Read All Logs": {
       "main": [
         [
-          { "node": "Calc Weekly Stats", "type": "main", "index": 0 }
+          {
+            "node": "Calculate Weekly Stats",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Calc Weekly Stats": {
+    "Calculate Weekly Stats": {
       "main": [
         [
-          { "node": "Send Weekly Report", "type": "main", "index": 0 },
-          { "node": "Save Weekly Summary", "type": "main", "index": 0 }
+          {
+            "node": "Send Weekly Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Weekly Report",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
   },
-  "pinData": {},
+  "active": false,
   "settings": {
     "executionOrder": "v1",
-    "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner",
-    "errorWorkflow": ""
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "staticData": null,
+  "versionId": "e7313d88-6144-46f7-a0c7-691d2ece1fe9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fda04789a37cec1fdf3940297aed8bbaf3d4e17ce4160752b902017147eabf55"
+  },
+  "nodeGroups": [],
+  "id": "epKITbgqK38ELC69",
   "tags": [
-    { "createdAt": "2024-01-01T00:00:00.000Z", "updatedAt": "2024-01-01T00:00:00.000Z", "id": "credit-scoring-tag", "name": "credit-scoring" }
-  ],
-  "triggerCount": 2,
-  "updatedAt": "2024-01-01T00:00:00.000Z",
-  "versionId": "1"
+    {
+      "updatedAt": "2026-07-14T19:27:51.830Z",
+      "createdAt": "2026-07-14T19:27:51.830Z",
+      "id": "81Di1TlYGe9kiFX5",
+      "name": "credit-scoring"
+    }
+  ]
 }

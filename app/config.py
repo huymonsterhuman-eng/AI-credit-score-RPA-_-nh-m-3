@@ -23,14 +23,14 @@ APP_SUBTITLE = 'Phân loại mức tín dụng cá nhân dựa trên Machine Lea
 
 # ============ Admin Dashboard ============
 ADMIN_PASSWORD = 'admin123'  # ĐỔI trước khi demo/production
-GOOGLE_SHEET_ID = '1ASE9CUCseFaU2cr99PrSVEfxWbxUkNGZ1xQhox5AKLM'
+GOOGLE_SHEET_ID = '18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU'
 SERVICE_ACCOUNT_PATH = PROJECT_ROOT / 'models' / 'service_account.json'
-SHEET_NAME = 'Credit Scoring Log'
+SHEET_NAME = 'Credit_Log'
 
 # ============ Phân quyền người dùng ============
 # username → (password, role)
 # role: 'admin' | 'customer'
 USERS = {
     'admin':    ('admin123',    'admin'),
-    'customer': ('credit2024',  'customer'),
+    'customer': ('credit123',  'customer'),
 }

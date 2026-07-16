@@ -8,7 +8,7 @@ import streamlit as st
 from config import USERS
 
 st.set_page_config(
-    page_title='CreditAI — Đăng nhập',
+    page_title='CreditAI - Đăng nhập',
     page_icon=None,
     layout='centered',
     initial_sidebar_state='collapsed',
