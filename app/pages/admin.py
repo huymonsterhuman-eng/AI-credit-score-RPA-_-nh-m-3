@@ -7,13 +7,14 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import requests
 import streamlit as st
 
 # Cho phép import từ app/ (parent của pages/)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import APP_TITLE
-from utils import (CLASS_COLORS, diff_inputs, load_sheet_data)
+from config import APP_TITLE, N8N_WEEKLY_WEBHOOK_URL, WEBHOOK_TIMEOUT
+from utils import (CLASS_COLORS, diff_inputs, load_sheet_data, load_weekly_report_data)
 
 st.set_page_config(page_title=f'{APP_TITLE} - Admin', page_icon=None, layout='wide')
 
@@ -415,6 +416,39 @@ def show_dashboard():
                         st.caption(f'Không đọc được factor diff: {_e}')
             else:
                 st.info(f'Không tìm thấy lượt tra cứu nào với email `{search_email}`.')
+
+    # ============ Báo cáo tuần (Weekly_Report) ============
+    st.markdown('### Báo cáo tuần (Weekly_Report)')
+    st.caption(
+        'Hệ thống tự chạy **8:00 sáng thứ Hai** hàng tuần, hoặc bấm nút bên dưới để chạy ngay.'
+    )
+    w1, w2 = st.columns([1, 3])
+    with w1:
+        if st.button('Chạy báo cáo tuần ngay', use_container_width=True, key='run_weekly'):
+            if not N8N_WEEKLY_WEBHOOK_URL:
+                st.error('Chưa cấu hình N8N_WEEKLY_WEBHOOK_URL trong config.py')
+            else:
+                try:
+                    r = requests.post(N8N_WEEKLY_WEBHOOK_URL, json={}, timeout=WEBHOOK_TIMEOUT)
+                    if r.ok:
+                        st.success('Đã kích hoạt báo cáo tuần. Kiểm tra tab Weekly_Report sau vài giây.')
+                        st.cache_data.clear()
+                    else:
+                        st.warning(f'Webhook trả về status {r.status_code}')
+                except requests.RequestException as e:
+                    st.error(f'Không kết nối được n8n: {e}')
+
+    try:
+        weekly_df = load_weekly_report_data()
+        if weekly_df.empty:
+            st.warning(
+                'Chưa có dòng nào trong tab Weekly_Report. '
+                'Tạo tab Weekly_Report trong Sheet, import lại workflow n8n, rồi bấm "Chạy báo cáo tuần ngay".'
+            )
+        else:
+            st.dataframe(weekly_df, use_container_width=True, hide_index=True)
+    except Exception as e:
+        st.warning(f'Không đọc được Weekly_Report: {e}')
 
     # ============ Export CSV ============
     st.markdown('### 💾 Xuất dữ liệu')

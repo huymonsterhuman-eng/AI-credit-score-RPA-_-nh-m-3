@@ -72,8 +72,13 @@ Sẽ có sau — file `workflow.json` trong folder này. Import bằng:
 Sau khi import:
 - Chọn credential đúng cho các node Google Sheets và Gmail.
 - Sửa Sheet ID và Sheet Name trong node "Append to Sheet".
+- Tạo thêm tab **Weekly_Report** trong cùng Google Sheet với các cột:
+  ```
+  Week | Total | Poor | Standard | Good | With_Email | Return_Rate | Avg_Per_Day
+  ```
 - **Activate** workflow (switch ↖ trên góc phải).
 - Copy Webhook URL (trong node Webhook) và dán vào `app/config.py` → biến `N8N_WEBHOOK_URL`.
+- Webhook báo cáo tuần (thủ công): `http://localhost:5678/webhook/weekly-report` → `N8N_WEEKLY_WEBHOOK_URL`.
 
 ## Bước 6 — Test
 

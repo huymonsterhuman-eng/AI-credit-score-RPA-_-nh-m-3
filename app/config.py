@@ -9,6 +9,7 @@ FEATURES_PATH = PROJECT_ROOT / 'models' / 'features.json'
 
 # n8n webhook — dán URL webhook sau khi setup n8n
 N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/credit-scoring'
+N8N_WEEKLY_WEBHOOK_URL = 'http://localhost:5678/webhook/weekly-report'
 WEBHOOK_TIMEOUT = 8  # seconds
 
 # Cảnh báo trong Streamlit

@@ -446,7 +446,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const now = new Date();\nconst sevenDaysAgo = new Date(now);\nsevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);\nconst allRows = $input.all().map(r => r.json);\nconst recentRows = allRows.filter(r => {\n  if (!r.Timestamp) return false;\n  const ts = new Date(r.Timestamp);\n  return ts >= sevenDaysAgo && ts <= now;\n});\nconst total = recentRows.length;\nconst poor = recentRows.filter(r => r.Result === 'Poor').length;\nconst standard = recentRows.filter(r => r.Result === 'Standard').length;\nconst good = recentRows.filter(r => r.Result === 'Good').length;\nconst withEmail = recentRows.filter(r => r.Email && r.Email.trim() !== '').length;\nconst uniqueEmails = [...new Set(recentRows.filter(r => r.Email).map(r => r.Email.toLowerCase().trim()))];\nconst allEmails = allRows.filter(r => r.Email).map(r => r.Email.toLowerCase().trim());\nconst emailCounts = {};\nallEmails.forEach(e => { emailCounts[e] = (emailCounts[e] || 0) + 1; });\nconst returnCustomers = uniqueEmails.filter(e => (emailCounts[e] || 0) > 1).length;\nconst returnRate = uniqueEmails.length > 0 ? ((returnCustomers / uniqueEmails.length) * 100).toFixed(1) + '%' : '0%';\nconst avgPerDay = (total / 7).toFixed(1);\nconst dayMap = {};\nrecentRows.forEach(r => {\n  const day = r.Timestamp ? r.Timestamp.split('T')[0].split(' ')[0] : 'N/A';\n  dayMap[day] = (dayMap[day] || 0) + 1;\n});\nconst peakDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0] || ['N/A', 0];\nconst topEmailsSorted = Object.entries(emailCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);\nconst weekStart = sevenDaysAgo.toISOString().split('T')[0];\nconst weekEnd = now.toISOString().split('T')[0];\nconst weekStr = `${weekStart} - ${weekEnd}`;\nconst poorPct = total > 0 ? ((poor / total) * 100).toFixed(1) : '0';\nconst standardPct = total > 0 ? ((standard / total) * 100).toFixed(1) : '0';\nconst goodPct = total > 0 ? ((good / total) * 100).toFixed(1) : '0';\nconst topEmailsHTML = topEmailsSorted.map((e, i) => `<tr><td style='padding:8px;border:1px solid #dee2e6'>${i + 1}</td><td style='padding:8px;border:1px solid #dee2e6'>${e[0]}</td><td style='padding:8px;border:1px solid #dee2e6;text-align:center'>${e[1]}</td></tr>`).join('');\nconst reportHTML = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family:Arial,sans-serif;background:#f8f9fa;padding:20px'><div style='max-width:700px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1)'><div style='background:#343a40;color:#fff;padding:20px;text-align:center'><h2 style='margin:0'>📊 Báo cáo Tín dụng Hàng tuần</h2><p style='margin:5px 0 0'>Tuần: ${weekStr}</p></div><div style='padding:20px'><div style='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:15px;margin-bottom:20px'><div style='background:#007bff;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${total}</h3><p style='margin:0;font-size:12px'>Tổng đánh giá</p></div><div style='background:#dc3545;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${poor}</h3><p style='margin:0;font-size:12px'>Poor (${poorPct}%)</p></div><div style='background:#fd7e14;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${standard}</h3><p style='margin:0;font-size:12px'>Standard (${standardPct}%)</p></div><div style='background:#28a745;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${good}</h3><p style='margin:0;font-size:12px'>Good (${goodPct}%)</p></div></div><table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#343a40;color:#fff'><th style='padding:10px;text-align:left' colspan='2'>📈 KPIs Tuần này</th></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Có email</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${withEmail}</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Khách quay lại</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${returnCustomers} (${returnRate})</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Trung bình/ngày</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${avgPerDay}</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Ngày cao điểm</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${peakDay[0]} (${peakDay[1]} đánh giá)</td></tr></table><table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#343a40;color:#fff'><th style='padding:10px'>STT</th><th style='padding:10px;text-align:left'>Email</th><th style='padding:10px'>Số lần</th></tr>${topEmailsHTML}</table></div></div></body></html>`;\nconst subject = `Báo cáo Tín dụng Tuần ${weekStr}`;\nreturn [{json: {subject, reportHTML, total, poor, standard, good, withEmail, returnRate, avgPerDay, weekStr}}];"
+        "jsCode": "const TZ = 'Asia/Ho_Chi_Minh';\nconst WINDOW_DAYS = 7;\nfunction vnYmd(d) { return d.toLocaleDateString('en-CA', { timeZone: TZ }); }\nfunction shiftYmd(ymd, days) {\n  const [y, m, day] = ymd.split('-').map(Number);\n  const dt = new Date(Date.UTC(y, m - 1, day));\n  dt.setUTCDate(dt.getUTCDate() + days);\n  return dt.toISOString().slice(0, 10);\n}\nfunction parseTs(raw) {\n  if (!raw) return null;\n  const s = String(raw).trim();\n  if (/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}/.test(s) && !/(Z|[+-]\\d{2}:?\\d{2})$/.test(s)) return new Date(s + '+07:00');\n  if (/^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}/.test(s)) return new Date(s.replace(' ', 'T') + '+07:00');\n  return new Date(s);\n}\nfunction tsYmd(raw) {\n  const d = parseTs(raw);\n  if (!d || isNaN(d.getTime())) return null;\n  return vnYmd(d);\n}\nconst weekEnd = vnYmd(new Date());\nconst weekStart = shiftYmd(weekEnd, -(WINDOW_DAYS - 1));\nconst weekStr = `${weekStart} - ${weekEnd}`;\nconst allRows = $input.all().map(r => r.json).filter(r => r.Timestamp);\nconst recentRows = allRows.filter(r => {\n  const day = tsYmd(r.Timestamp);\n  return day && day >= weekStart && day <= weekEnd;\n});\nconst total = recentRows.length;\nconst poor = recentRows.filter(r => r.Result === 'Poor').length;\nconst standard = recentRows.filter(r => r.Result === 'Standard').length;\nconst good = recentRows.filter(r => r.Result === 'Good').length;\nconst withEmail = recentRows.filter(r => r.Email && String(r.Email).trim() !== '').length;\nconst uniqueEmails = [...new Set(recentRows.filter(r => r.Email).map(r => String(r.Email).toLowerCase().trim()))];\nconst allEmails = allRows.filter(r => r.Email).map(r => String(r.Email).toLowerCase().trim());\nconst emailCounts = {};\nallEmails.forEach(e => { emailCounts[e] = (emailCounts[e] || 0) + 1; });\nconst returnCustomers = uniqueEmails.filter(e => (emailCounts[e] || 0) > 1).length;\nconst returnRate = uniqueEmails.length > 0 ? ((returnCustomers / uniqueEmails.length) * 100).toFixed(1) + '%' : '0%';\nconst avgPerDay = (total / WINDOW_DAYS).toFixed(1);\nconst dayMap = {};\nrecentRows.forEach(r => {\n  const day = tsYmd(r.Timestamp) || 'N/A';\n  dayMap[day] = (dayMap[day] || 0) + 1;\n});\nconst peakDay = Object.entries(dayMap).sort((a, b) => b[1] - a[1])[0] || ['N/A', 0];\nconst topEmailsSorted = Object.entries(emailCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);\nconst poorPct = total > 0 ? ((poor / total) * 100).toFixed(1) : '0';\nconst standardPct = total > 0 ? ((standard / total) * 100).toFixed(1) : '0';\nconst goodPct = total > 0 ? ((good / total) * 100).toFixed(1) : '0';\nconst topEmailsHTML = topEmailsSorted.map((e, i) => `<tr><td style='padding:8px;border:1px solid #dee2e6'>${i + 1}</td><td style='padding:8px;border:1px solid #dee2e6'>${e[0]}</td><td style='padding:8px;border:1px solid #dee2e6;text-align:center'>${e[1]}</td></tr>`).join('');\nconst reportHTML = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family:Arial,sans-serif;background:#f8f9fa;padding:20px'><div style='max-width:700px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1)'><div style='background:#343a40;color:#fff;padding:20px;text-align:center'><h2 style='margin:0'>📊 Báo cáo Tín dụng Hàng tuần</h2><p style='margin:5px 0 0'>Tuần: ${weekStr} (giờ VN)</p></div><div style='padding:20px'><div style='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:15px;margin-bottom:20px'><div style='background:#007bff;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${total}</h3><p style='margin:0;font-size:12px'>Tổng đánh giá</p></div><div style='background:#dc3545;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${poor}</h3><p style='margin:0;font-size:12px'>Poor (${poorPct}%)</p></div><div style='background:#fd7e14;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${standard}</h3><p style='margin:0;font-size:12px'>Standard (${standardPct}%)</p></div><div style='background:#28a745;color:#fff;padding:15px;border-radius:8px;text-align:center'><h3 style='margin:0 0 5px'>${good}</h3><p style='margin:0;font-size:12px'>Good (${goodPct}%)</p></div></div><table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#343a40;color:#fff'><th style='padding:10px;text-align:left' colspan='2'>📈 KPIs Tuần này</th></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Có email</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${withEmail}</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Khách quay lại</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${returnCustomers} (${returnRate})</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Trung bình/ngày</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${avgPerDay}</td></tr><tr><td style='padding:8px;border:1px solid #dee2e6'>Ngày cao điểm</td><td style='padding:8px;border:1px solid #dee2e6;text-align:right'>${peakDay[0]} (${peakDay[1]} đánh giá)</td></tr></table><table style='width:100%;border-collapse:collapse;margin-bottom:20px'><tr style='background:#343a40;color:#fff'><th style='padding:10px'>STT</th><th style='padding:10px;text-align:left'>Email</th><th style='padding:10px'>Số lần</th></tr>${topEmailsHTML}</table></div></div></body></html>`;\nconst subject = `Báo cáo Tín dụng Tuần ${weekStr}`;\nreturn [{json: {subject, reportHTML, total, poor, standard, good, withEmail, returnRate, avgPerDay, weekStr}}];"
       },
       "id": "897704c2-ec5d-4c51-965b-e8a2b14aa8e4",
       "name": "Calculate Weekly Stats",
@@ -462,7 +462,9 @@
         "sendTo": "linhham1509@gmail.com",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.reportHTML }}",
-        "options": {}
+        "options": {
+          "emailType": "html"
+        }
       },
       "id": "30a51c17-f87d-465f-880c-8a004eb978e1",
       "name": "Send Weekly Report",
@@ -486,9 +488,10 @@
         "documentId": {
           "__rl": true,
           "value": "18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU",
-          "mode": ""
+          "mode": "id"
         },
         "sheetName": {
+          "__rl": true,
           "mode": "name",
           "value": "Weekly_Report"
         },
@@ -606,6 +609,25 @@
           "name": "Google Sheets account 2"
         }
       }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "weekly-report",
+        "responseMode": "onReceived",
+        "options": {
+          "responseData": "noData"
+        }
+      },
+      "id": "c4e8f2a1-9b3d-4e5f-a6b7-8c9d0e1f2a3b",
+      "name": "Weekly Report Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        2048
+      ],
+      "webhookId": "d5f9a3b2-0c4e-5f6a-b7c8-9d0e1f2a3b4c"
     }
   ],
   "pinData": {},
@@ -704,6 +726,17 @@
       ]
     },
     "Weekly Schedule": {
+      "main": [
+        [
+          {
+            "node": "Read All Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Report Webhook": {
       "main": [
         [
           {

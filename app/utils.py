@@ -778,6 +778,35 @@ def load_sheet_data() -> pd.DataFrame:
     return df.sort_values('Thời gian', ascending=False) if 'Thời gian' in df.columns else df
 
 
+def load_weekly_report_data() -> pd.DataFrame:
+    """Đọc tab Weekly_Report từ Google Sheet (báo cáo tuần do n8n ghi)."""
+    import gspread
+    from google.oauth2.service_account import Credentials
+
+    if not SERVICE_ACCOUNT_PATH.exists():
+        raise FileNotFoundError(
+            f'Chưa cấu hình service account. Đặt file JSON tại {SERVICE_ACCOUNT_PATH}.'
+        )
+
+    scopes = [
+        'https://www.googleapis.com/auth/spreadsheets.readonly',
+        'https://www.googleapis.com/auth/drive.readonly',
+    ]
+    creds = Credentials.from_service_account_file(
+        str(SERVICE_ACCOUNT_PATH), scopes=scopes
+    )
+    gc = gspread.authorize(creds)
+    sh = gc.open_by_key(GOOGLE_SHEET_ID)
+
+    try:
+        ws = sh.worksheet('Weekly_Report')
+    except gspread.WorksheetNotFound:
+        return pd.DataFrame()
+
+    records = ws.get_all_records()
+    return pd.DataFrame(records)
+
+
 def derive_behavior(user_inputs: dict) -> tuple[str, str]:
     """Suy ra Spending_Level & Payment_Value từ số liệu tài chính của user."""
     salary = max(user_inputs.get('Monthly_Inhand_Salary', 1), 1)
