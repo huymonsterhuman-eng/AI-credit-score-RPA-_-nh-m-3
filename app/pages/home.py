@@ -508,18 +508,27 @@ if submitted:
             if not diffs:
                 st.info('Không có yếu tố nào thay đổi đáng kể giữa 2 lần.')
             else:
+                def _signed_impact(d: dict) -> float:
+                    """Trục X: dương = cải thiện (xanh), âm = xấu đi (đỏ)."""
+                    if d['is_categorical']:
+                        mag = abs(d['delta']) * 50
+                    elif d.get('delta_pct') is not None:
+                        mag = abs(d['delta_pct'])
+                    else:
+                        mag = abs(d['delta'])
+                    return mag if d['impact'] == 'good' else -mag
+
                 chart_df = pd.DataFrame([{
                     'Feature': d['label'],
-                    'Delta':   d['delta_pct'] if d.get('delta_pct') is not None
-                               else (d['delta'] * 50 if d['is_categorical'] else d['delta']),
+                    'SignedImpact': _signed_impact(d),
                     'Impact':  d['impact'],
                     'Prev':    d['prev'], 'Curr': d['curr'],
                     'IsCat':   d['is_categorical'], 'Format': d.get('format'),
-                } for d in diffs]).sort_values('Delta')
+                } for d in diffs]).sort_values('SignedImpact')
 
                 fig_diff = go.Figure(go.Bar(
-                    y=chart_df['Feature'], x=chart_df['Delta'], orientation='h',
-                    marker_color=['#2e7d32' if i == 'good' else '#920707' for i in chart_df['Impact']],
+                    y=chart_df['Feature'], x=chart_df['SignedImpact'], orientation='h',
+                    marker_color=['#2e7d32' if i == 'good' else '#c62828' for i in chart_df['Impact']],
                     text=[(f"{r['Prev']} → {r['Curr']}" if r['IsCat']
                            else (r['Format'] or '{:.1f}').format(r['Prev']) + ' → ' +
                                 (r['Format'] or '{:.1f}').format(r['Curr']))
@@ -529,7 +538,7 @@ if submitted:
                 fig_diff.update_layout(
                     height=max(280, 40 + 40 * len(chart_df)),
                     margin=dict(l=20, r=120, t=10, b=10),
-                    xaxis_title='Mức độ thay đổi (%)',
+                    xaxis_title='Tác động (→ xanh = cải thiện, ← đỏ = xấu đi)',
                     plot_bgcolor='white', paper_bgcolor='white',
                     showlegend=False,
                 )

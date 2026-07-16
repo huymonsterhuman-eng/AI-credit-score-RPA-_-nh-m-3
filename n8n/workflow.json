@@ -6,7 +6,9 @@
         "httpMethod": "POST",
         "path": "credit-scoring",
         "responseMode": "onReceived",
-        "options": {}
+        "options": {
+          "responseData": "noData"
+        }
       },
       "id": "7d3975e7-49c8-4903-8b32-b062a65913e5",
       "name": "Webhook",
@@ -219,7 +221,7 @@
           "conditions": [
             {
               "id": "cond-poor",
-              "leftValue": "={{ $json.body.predicted_class }}",
+              "leftValue": "={{ $('Webhook').item.json.body.predicted_class }}",
               "rightValue": "Poor",
               "operator": {
                 "type": "string",
@@ -242,7 +244,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const b = $input.item.json.body;\nconst pPoor = (b.proba.Poor * 100).toFixed(1);\nconst pStandard = (b.proba.Standard * 100).toFixed(1);\nconst pGood = (b.proba.Good * 100).toFixed(1);\nconst sheetUrl = 'https://docs.google.com/spreadsheets/d/18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU';\nconst subject = `CẢNH BÁO POOR: ${b.customer_name} - P(Poor)=${pPoor}%`;\nconst alertHTML = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family:Arial,sans-serif;background:#f8f9fa;padding:20px'>\n<div style='max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1)'>\n<div style='background:#dc3545;color:#fff;padding:20px;text-align:center'>\n<h2 style='margin:0'>⚠️ CẢNH BÁO RỦI RO TÍN DỤNG</h2>\n<p style='margin:5px 0 0'>Khách hàng được phân loại: POOR</p>\n</div>\n<div style='padding:20px'>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#f8d7da'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #f5c6cb'>📋 Thông tin khách hàng</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Tên</td><td style='padding:8px;border:1px solid #dee2e6'>${b.customer_name}</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Email</td><td style='padding:8px;border:1px solid #dee2e6'>${b.customer_email || 'N/A'}</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Thời gian</td><td style='padding:8px;border:1px solid #dee2e6'>${b.timestamp}</td></tr>\n</table>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#f8d7da'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #f5c6cb'>📊 Xác suất phân loại</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Poor)</td><td style='padding:8px;border:1px solid #dee2e6;color:#dc3545;font-weight:bold'>${pPoor}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Standard)</td><td style='padding:8px;border:1px solid #dee2e6;color:#fd7e14'>${pStandard}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Good)</td><td style='padding:8px;border:1px solid #dee2e6;color:#28a745'>${pGood}%</td></tr>\n</table>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#fff3cd'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #ffc107'>⚡ Chỉ số rủi ro</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Số ngày trễ hạn</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Delay_from_due_date} ngày</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Số lần trễ thanh toán</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Num_of_Delayed_Payment} lần</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Tỷ lệ sử dụng tín dụng</td><td style='padding:8px;border:1px solid #dee2e6'>${(b.inputs.Credit_Utilization_Ratio * 100).toFixed(1)}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Nợ tồn đọng</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Outstanding_Debt.toLocaleString()} VND</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Thu nhập hàng năm</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Annual_Income.toLocaleString()} VND</td></tr>\n</table>\n<div style='text-align:center;margin-top:20px'>\n<a href='${sheetUrl}' style='background:#dc3545;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold'>📊 Xem Google Sheet</a>\n</div>\n</div>\n</div></body></html>`;\nreturn [{json: {subject, alertHTML, to: 'credit.scoring.admin@gmail.com'}}];"
+        "jsCode": "const b = $('Webhook').item.json.body;\nconst pPoor = (b.proba.Poor * 100).toFixed(1);\nconst pStandard = (b.proba.Standard * 100).toFixed(1);\nconst pGood = (b.proba.Good * 100).toFixed(1);\nconst sheetUrl = 'https://docs.google.com/spreadsheets/d/18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU';\nconst subject = `CẢNH BÁO POOR: ${b.customer_name} - P(Poor)=${pPoor}%`;\nconst alertHTML = `<!DOCTYPE html><html><head><meta charset='UTF-8'></head><body style='font-family:Arial,sans-serif;background:#f8f9fa;padding:20px'>\n<div style='max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1)'>\n<div style='background:#dc3545;color:#fff;padding:20px;text-align:center'>\n<h2 style='margin:0'>⚠️ CẢNH BÁO RỦI RO TÍN DỤNG</h2>\n<p style='margin:5px 0 0'>Khách hàng được phân loại: POOR</p>\n</div>\n<div style='padding:20px'>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#f8d7da'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #f5c6cb'>📋 Thông tin khách hàng</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Tên</td><td style='padding:8px;border:1px solid #dee2e6'>${b.customer_name}</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Email</td><td style='padding:8px;border:1px solid #dee2e6'>${b.customer_email || 'N/A'}</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Thời gian</td><td style='padding:8px;border:1px solid #dee2e6'>${b.timestamp}</td></tr>\n</table>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#f8d7da'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #f5c6cb'>📊 Xác suất phân loại</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Poor)</td><td style='padding:8px;border:1px solid #dee2e6;color:#dc3545;font-weight:bold'>${pPoor}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Standard)</td><td style='padding:8px;border:1px solid #dee2e6;color:#fd7e14'>${pStandard}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>P(Good)</td><td style='padding:8px;border:1px solid #dee2e6;color:#28a745'>${pGood}%</td></tr>\n</table>\n<table style='width:100%;border-collapse:collapse;margin-bottom:20px'>\n<tr style='background:#fff3cd'><th colspan='2' style='padding:10px;text-align:left;border:1px solid #ffc107'>⚡ Chỉ số rủi ro</th></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Số ngày trễ hạn</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Delay_from_due_date} ngày</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Số lần trễ thanh toán</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Num_of_Delayed_Payment} lần</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Tỷ lệ sử dụng tín dụng</td><td style='padding:8px;border:1px solid #dee2e6'>${(b.inputs.Credit_Utilization_Ratio * 100).toFixed(1)}%</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Nợ tồn đọng</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Outstanding_Debt.toLocaleString()} VND</td></tr>\n<tr><td style='padding:8px;border:1px solid #dee2e6;font-weight:bold'>Thu nhập hàng năm</td><td style='padding:8px;border:1px solid #dee2e6'>${b.inputs.Annual_Income.toLocaleString()} VND</td></tr>\n</table>\n<div style='text-align:center;margin-top:20px'>\n<a href='${sheetUrl}' style='background:#dc3545;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold'>📊 Xem Google Sheet</a>\n</div>\n</div>\n</div></body></html>`;\nreturn [{json: {subject, alertHTML, to: 'credit.scoring.admin@gmail.com'}}];"
       },
       "id": "5f714418-a86e-4640-8003-0ac2358a7673",
       "name": "Build Alert Email",
@@ -258,7 +260,9 @@
         "sendTo": "linhham1509@gmail.com",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.alertHTML }}",
-        "options": {}
+        "options": {
+          "emailType": "html"
+        }
       },
       "id": "895eb98b-cc8a-4424-af65-9df8dcd7a01d",
       "name": "Send Alert Email",
@@ -288,7 +292,7 @@
           "conditions": [
             {
               "id": "cond-email",
-              "leftValue": "={{ $json.body.customer_email }}",
+              "leftValue": "={{ $('Webhook').item.json.body.customer_email }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -311,12 +315,14 @@
     },
     {
       "parameters": {
+        "operation": "read",
         "documentId": {
           "__rl": true,
           "value": "18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU",
-          "mode": ""
+          "mode": "id"
         },
         "sheetName": {
+          "__rl": true,
           "mode": "name",
           "value": "Credit_Log"
         },
@@ -368,7 +374,9 @@
         "sendTo": "={{ $json.to }}",
         "subject": "={{ $json.subject }}",
         "message": "={{ $json.emailHTML }}",
-        "options": {}
+        "options": {
+          "emailType": "html"
+        }
       },
       "id": "eb0edefe-7e75-4bb4-809a-1bc10ff103aa",
       "name": "Send Customer Email",
@@ -408,12 +416,14 @@
     },
     {
       "parameters": {
+        "operation": "read",
         "documentId": {
           "__rl": true,
           "value": "18GOJXNSzyVyQTe_U6F3BEMaAQss6Kk-K8SpwdITQNaU",
-          "mode": ""
+          "mode": "id"
         },
         "sheetName": {
+          "__rl": true,
           "mode": "name",
           "value": "Credit_Log"
         },
