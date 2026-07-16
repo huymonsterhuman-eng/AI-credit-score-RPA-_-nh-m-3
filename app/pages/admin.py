@@ -12,38 +12,28 @@ import streamlit as st
 # Cho phép import từ app/ (parent của pages/)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import ADMIN_PASSWORD, APP_TITLE
-from utils import (CLASS_COLORS, check_admin_password, diff_inputs,
-                    load_sheet_data)
+from config import APP_TITLE
+from utils import (CLASS_COLORS, diff_inputs, load_sheet_data)
 
+st.set_page_config(page_title=f'{APP_TITLE} — Admin', page_icon=None, layout='wide')
 
-st.set_page_config(page_title=f'{APP_TITLE} — Admin', page_icon='📊', layout='wide')
+# ── Auth guard ───────────────────────────────────────────────────────────────
+if st.session_state.get('role') != 'admin':
+    st.switch_page('login.py')
 
-# ============ Session state ============
-if 'admin_logged_in' not in st.session_state:
-    st.session_state.admin_logged_in = False
-
-
-# ============ Login form ============
-def show_login():
-    st.title('🔐 Admin Dashboard — Đăng nhập')
-    st.caption('Trang này dành cho nhân viên quản lý hệ thống.')
-
-    with st.form('login_form'):
-        password = st.text_input('Mật khẩu', type='password')
-        submitted = st.form_submit_button('Đăng nhập', use_container_width=True)
-        if submitted:
-            if check_admin_password(password):
-                st.session_state.admin_logged_in = True
-                st.rerun()
-            else:
-                st.error('❌ Mật khẩu không đúng.')
-
+# ── Ẩn sidebar ───────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+  [data-testid="stSidebar"]        { display: none !important; }
+  [data-testid="collapsedControl"] { display: none !important; }
+  #MainMenu, footer                { visibility: hidden; }
+</style>
+""", unsafe_allow_html=True)
 
 def logout():
-    st.session_state.admin_logged_in = False
-    st.rerun()
-
+    st.session_state.role = None
+    st.session_state.username = None
+    st.switch_page('login.py')
 
 # ============ Dashboard ============
 @st.cache_data(ttl=30, show_spinner='Đang tải dữ liệu từ Google Sheets...')
@@ -56,14 +46,14 @@ def show_dashboard():
     # Header
     c1, c2, c3 = st.columns([6, 1, 1])
     with c1:
-        st.title('📊 Admin Dashboard')
+        st.title('Admin Dashboard')
         st.caption('Báo cáo tổng hợp các lượt tra cứu tín dụng')
     with c2:
-        if st.button('🔄 Refresh', use_container_width=True):
+        if st.button('Refresh', use_container_width=True):
             st.cache_data.clear()
             st.rerun()
     with c3:
-        if st.button('🚪 Logout', use_container_width=True):
+        if st.button('Đăng xuất', use_container_width=True):
             logout()
 
     # Load data
@@ -122,7 +112,7 @@ def show_dashboard():
         return
 
     # ============ KPI Cards — Hàng 1: Phân loại ============
-    st.markdown('### 📈 Chỉ số tổng quan')
+    st.markdown('### Chỉ số tổng quan')
     total = len(dff)
     class_col = 'Nhóm dự đoán' if 'Nhóm dự đoán' in dff.columns else None
 
@@ -180,7 +170,7 @@ def show_dashboard():
         emails_valid = dff[has_email]['Email'].astype(str).str.strip().str.lower()
 
         if len(emails_valid) > 0:
-            st.markdown('### 🔁 Phân bố số lần tra cứu của mỗi khách')
+            st.markdown('### Phân bố số lần tra cứu của mỗi khách')
             email_counts = emails_valid.value_counts()
 
             # Bin số lần
@@ -438,7 +428,4 @@ def show_dashboard():
 
 
 # ============ Main ============
-if st.session_state.admin_logged_in:
-    show_dashboard()
-else:
-    show_login()
+show_dashboard()

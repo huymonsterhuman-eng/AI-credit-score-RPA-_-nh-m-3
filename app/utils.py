@@ -1,4 +1,4 @@
-"""Hàm dùng lại cho Streamlit app: load model, build input, predict, SHAP, admin dashboard."""
+﻿"""Hàm dùng lại cho Streamlit app: load model, build input, predict, SHAP, admin dashboard."""
 
 import json
 import sqlite3
@@ -122,40 +122,40 @@ def suggestions_for(result: dict, user_inputs: dict,
     # ── Overview theo ngữ cảnh ─────────────────────────────────────────────
     if cls == 'Poor' and first_time:
         tips.append(
-            '⚠️ **Nhóm tín dụng Kém (Poor)** — lần đầu tra cứu. '
+            '**Nhóm tín dụng Kém (Poor)** — lần đầu tra cứu. '
             'Hầu hết ngân hàng sẽ từ chối hoặc áp lãi suất >15%/năm. '
             'Tin tốt: với 6–12 tháng kỷ luật tài chính, bạn hoàn toàn có thể lên Standard.'
         )
     elif cls == 'Poor' and stagnant:
         tips.append(
-            '⚠️ **Vẫn ở nhóm Kém (Poor)** — chưa có cải thiện so với lần trước. '
+            '**Vẫn ở nhóm Kém (Poor)** — chưa có cải thiện so với lần trước. '
             'Các gợi ý bên dưới là những việc cần làm ngay, không nên trì hoãn thêm.'
         )
     elif cls == 'Poor' and improving:
         tips.append(
-            f'📈 **Vẫn Poor nhưng đang tiến bộ** — xác suất Good tăng '
+            f'**Vẫn Poor nhưng đang tiến bộ** — xác suất Good tăng '
             f'{(curr_p_good - prev_p_good)*100:.1f}% so với lần trước. '
             'Đi đúng hướng rồi, tiếp tục duy trì!'
         )
     elif cls == 'Standard' and prev_cls == 'Poor':
         tips.append(
-            '🎉 **Đã lên Standard từ Poor** — cải thiện rõ rệt! '
+            '**Đã lên Standard từ Poor** — cải thiện rõ rệt! '
             'Bạn đã có thể được duyệt vay cơ bản. '
             'Bây giờ tập trung lên Good để hưởng lãi suất tốt hơn 2–3%/năm.'
         )
     elif cls == 'Standard':
         tips.append(
-            '🟠 **Nhóm Trung bình (Standard)** — có thể được duyệt vay nhưng lãi suất chưa tối ưu. '
+            '**Nhóm Trung bình (Standard)** — có thể được duyệt vay nhưng lãi suất chưa tối ưu. '
             'Khoảng cách lên Good không xa — thường chỉ cần cải thiện 2–3 yếu tố.'
         )
     elif cls == 'Good' and prev_cls in ('Poor', 'Standard'):
         tips.append(
-            f'✅ **Đã đạt nhóm Tốt (Good)** từ {prev_cls}! '
+            f'**Đã đạt nhóm Tốt (Good)** từ {prev_cls}! '
             'Bạn đủ điều kiện vay với lãi suất ưu đãi. Duy trì thói quen hiện tại.'
         )
     else:
         tips.append(
-            '✅ **Nhóm Tốt (Good)** — đủ điều kiện vay với lãi suất ưu đãi. '
+            '**Nhóm Tốt (Good)** — đủ điều kiện vay với lãi suất ưu đãi. '
             'Tiếp tục duy trì là cách tốt nhất.'
         )
 
@@ -179,60 +179,60 @@ def suggestions_for(result: dict, user_inputs: dict,
 
     if cls == 'Poor':
         # ── Phần 1: Vấn đề KHẨN CẤP (ảnh hưởng điểm nhiều nhất) ──────────
-        tips.append('─── 🚨 ƯU TIÊN XỬ LÝ NGAY ───')
+        tips.append('─── ƯU TIÊN XỬ LÝ NGAY ───')
 
         if delay > 30:
             tips.append(
-                f'🔴 Trả trễ {delay:.0f} ngày (rất nghiêm trọng) — '
+                f'Trả trễ {delay:.0f} ngày (rất nghiêm trọng) — '
                 'Đây là yếu tố phá điểm số 1. Bắt đầu từ ngay hôm nay: '
                 'setup nhắc nhở tự động hoặc GIRO tự động trả trước ngày đến hạn 2–3 ngày. '
                 'Chỉ cần 3 tháng trả đúng hạn liên tiếp, điểm sẽ bắt đầu cải thiện.'
             )
         elif delay > 10:
             tips.append(
-                f'🔴 Trả trễ TB {delay:.0f} ngày — vượt ngưỡng CIC ghi nhận rủi ro (TT 11/2021/TT-NHNN). '
+                f'Trả trễ TB {delay:.0f} ngày — vượt ngưỡng CIC ghi nhận rủi ro (TT 11/2021/TT-NHNN). '
                 'Hành động: bật nhắc lịch thanh toán trên điện thoại, trả trước ít nhất 5 ngày.'
             )
 
         if num_delay > 20:
             tips.append(
-                f'🔴 {num_delay} lần trả trễ — hồ sơ đã bị đánh dấu "khách rủi ro cao" ở CIC. '
+                f'{num_delay} lần trả trễ — hồ sơ đã bị đánh dấu "khách rủi ro cao" ở CIC. '
                 'Không có cách nào xóa lịch sử này nhanh chóng — chỉ có thể xây dựng lại bằng cách '
                 'trả đúng hạn liên tục 12+ tháng tới. Bắt đầu càng sớm càng tốt.'
             )
         elif num_delay > 10:
             tips.append(
-                f'🟠 {num_delay} lần trả trễ — cần dừng ngay. '
+                f'{num_delay} lần trả trễ — cần dừng ngay. '
                 'Setup autopay cho tất cả khoản vay/thẻ hiện có.'
             )
 
         if pay_min == 'Yes':
             tips.append(
-                '🔴 Đang chỉ trả khoản tối thiểu — dấu hiệu dòng tiền căng thẳng. '
+                'Đang chỉ trả khoản tối thiểu — dấu hiệu dòng tiền căng thẳng. '
                 'Tiền lãi tích lũy gấp 3–5× nếu chỉ trả minimum. '
                 'Mục tiêu: tăng dần lên trả ít nhất 30% số dư mỗi tháng.'
             )
 
         if payday:
             tips.append(
-                '🔴 Đang có vay ngắn hạn (Payday Loan) — lãi suất loại này thường 200–400%/năm. '
+                'Đang có vay ngắn hạn (Payday Loan) — lãi suất loại này thường 200–400%/năm. '
                 'Ưu tiên tất toán khoản này trước tất cả các khoản khác.'
             )
 
         if dti > 0.6:
             tips.append(
-                f'🔴 Tỷ lệ nợ/thu nhập {dti:.0%} — cực kỳ nguy hiểm. '
+                f'Tỷ lệ nợ/thu nhập {dti:.0%} — cực kỳ nguy hiểm. '
                 f'Nợ hiện tại {outstanding:,.0f} USD chiếm quá lớn so với thu nhập. '
                 'Cần lập kế hoạch trả nợ ngay: ưu tiên khoản lãi suất cao nhất trước (phương pháp Avalanche).'
             )
         elif dti > 0.4:
             tips.append(
-                f'🟠 Tỷ lệ nợ/thu nhập {dti:.0%} — vượt ngưỡng an toàn 40%. '
+                f'Tỷ lệ nợ/thu nhập {dti:.0%} — vượt ngưỡng an toàn 40%. '
                 'Tránh vay thêm bất kỳ khoản nào cho đến khi giảm được nợ hiện tại.'
             )
 
         # ── Phần 2: Cải thiện TRUNG HẠN (3–6 tháng) ──────────────────────
-        tips.append('─── 📉 CẢI THIỆN TRONG 3–6 THÁNG ───')
+        tips.append('─── CẢI THIỆN TRONG 3–6 THÁNG ───')
 
         if util > 80:
             tips.append(
@@ -271,7 +271,7 @@ def suggestions_for(result: dict, user_inputs: dict,
 
         # ── Phần 3: Nếu là lần 2+ mà vẫn Poor ───────────────────────────
         if stagnant:
-            tips.append('─── 🔄 NHÌN LẠI SO VỚI LẦN TRƯỚC ───')
+            tips.append('─── NHÌN LẠI SO VỚI LẦN TRƯỚC ───')
             tips.append(
                 'Điểm chưa cải thiện kể từ lần tra cứu trước. '
                 'Hãy trung thực: trong các gợi ý lần trước, bạn đã thực hiện được gợi ý nào? '
@@ -279,30 +279,30 @@ def suggestions_for(result: dict, user_inputs: dict,
             )
 
         # ── Phần 4: Lộ trình lên Standard ────────────────────────────────
-        tips.append('─── 🗓️ LỘ TRÌNH LÊN STANDARD (6–12 THÁNG) ───')
+        tips.append('─── LỘ TRÌNH LÊN STANDARD (6–12 THÁNG) ───')
         tips.append(
-            '① Tháng 1–3: Trả đúng hạn 100%, dừng mọi khoản vay mới. '
-            '② Tháng 3–6: Giảm credit utilization xuống dưới 60%. '
-            '③ Tháng 6–12: Duy trì streak thanh toán đúng hạn, giảm dần số lần trễ trong hồ sơ CIC.'
+            '1. Tháng 1–3: Trả đúng hạn 100%, dừng mọi khoản vay mới. '
+            '2. Tháng 3–6: Giảm credit utilization xuống dưới 60%. '
+            '3. Tháng 6–12: Duy trì streak thanh toán đúng hạn, giảm dần số lần trễ trong hồ sơ CIC.'
         )
 
     elif cls == 'Standard':
         # ── Standard: tập trung vào lộ trình lên Good ─────────────────────
-        tips.append('─── 📋 PHÂN TÍCH ĐỂ LÊN GOOD ───')
+        tips.append('─── PHÂN TÍCH ĐỂ LÊN GOOD ───')
 
         blockers = []  # các yếu tố đang cản trở lên Good
 
         if delay > 10:
             blockers.append(f'trả trễ {delay:.0f} ngày')
             tips.append(
-                f'🟠 Trả trễ TB {delay:.0f} ngày — đây là rào cản chính. '
+                f'Trả trễ TB {delay:.0f} ngày — đây là rào cản chính. '
                 'Giảm xuống dưới 5 ngày trong 3 tháng tới sẽ tạo ra sự khác biệt rõ rệt.'
             )
 
         if util > 30:
             blockers.append(f'utilization {util:.0f}%')
             tips.append(
-                f'🟠 Tỷ lệ sử dụng tín dụng {util:.0f}% — mục tiêu là dưới 30%. '
+                f'Tỷ lệ sử dụng tín dụng {util:.0f}% — mục tiêu là dưới 30%. '
                 f'Cần giảm khoảng {max(0, util - 30):.0f}% nữa. '
                 'Cách nhanh nhất: trả bớt dư nợ thẻ tín dụng trước ngày sao kê.'
             )
@@ -310,7 +310,7 @@ def suggestions_for(result: dict, user_inputs: dict,
         if dti > 0.35:
             blockers.append(f'DTI {dti:.0%}')
             tips.append(
-                f'🟠 Tỷ lệ nợ/thu nhập {dti:.0%} — nên giảm xuống dưới 35% để vào vùng "Good". '
+                f'Tỷ lệ nợ/thu nhập {dti:.0%} — nên giảm xuống dưới 35% để vào vùng "Good". '
                 f'Ưu tiên trả bớt {outstanding:,.0f} USD nợ tồn đọng.'
             )
 
@@ -348,19 +348,19 @@ def suggestions_for(result: dict, user_inputs: dict,
 
         # Tóm tắt rào cản
         if blockers:
-            tips.append('─── 🎯 TÓM TẮT: CẦN XỬ LÝ ĐỂ LÊN GOOD ───')
+            tips.append('─── TÓM TẮT: CẦN XỬ LÝ ĐỂ LÊN GOOD ───')
             tips.append(
                 f'Rào cản chính hiện tại: **{" | ".join(blockers)}**. '
                 'Giải quyết được 2/3 trong số này trong 3 tháng tới có thể đủ để lên Good.'
             )
         else:
             tips.append(
-                '✅ Không có rào cản rõ ràng — bạn đang ở gần ranh giới Good. '
+                'Không có rào cản rõ ràng — bạn đang ở gần ranh giới Good. '
                 'Duy trì ổn định 2–3 tháng nữa, điểm có thể tự đẩy lên.'
             )
 
     else:  # Good
-        tips.append('─── ✅ DUY TRÌ & TỐI ƯU HÓA ───')
+        tips.append('─── DUY TRÌ & TỐI ƯU HÓA ───')
 
         if util < 10:
             tips.append(
@@ -385,11 +385,11 @@ def suggestions_for(result: dict, user_inputs: dict,
                 'Ở mức Good, bạn đủ điều kiện mở thêm tài khoản đầu tư (chứng khoán, quỹ mở).'
             )
 
-        tips.append('─── 💳 SẢN PHẨM TÍN DỤNG PHÙ HỢP VỚI NHÓM GOOD ───')
+        tips.append('─── SẢN PHẨM TÍN DỤNG PHÙ HỢP VỚI NHÓM GOOD ───')
         tips.append(
-            '• Thẻ tín dụng hoàn tiền (cashback) hoặc tích điểm — lãi suất ưu đãi 10–12%/năm.\n'
-            '• Vay mua nhà (Mortgage) — ngân hàng sẵn sàng duyệt với lãi suất tốt.\n'
-            '• Vay tín chấp tiêu dùng — lãi suất thường 10–13%/năm thay vì 15–18% như Standard.'
+            '- Thẻ tín dụng hoàn tiền (cashback) hoặc tích điểm — lãi suất ưu đãi 10–12%/năm.\n'
+            '- Vay mua nhà (Mortgage) — ngân hàng sẵn sàng duyệt với lãi suất tốt.\n'
+            '- Vay tín chấp tiêu dùng — lãi suất thường 10–13%/năm thay vì 15–18% như Standard.'
         )
 
         if history < 60:
@@ -786,3 +786,4 @@ def derive_behavior(user_inputs: dict) -> tuple[str, str]:
         payment_value = 'Large'
 
     return spending_level, payment_value
+
