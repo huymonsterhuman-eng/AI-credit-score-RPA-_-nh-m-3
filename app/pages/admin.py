@@ -7,8 +7,12 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 import requests
 import streamlit as st
+
+# Set default Plotly theme to dark cho consistent với dark theme của app
+pio.templates.default = 'plotly_dark'
 
 # Cho phép import từ app/ (parent của pages/)
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -306,7 +310,17 @@ def show_dashboard():
         if search_email:
             history = dff[dff['Email'].str.contains(search_email, case=False, na=False)]
             if not history.empty:
-                st.dataframe(history.reset_index(drop=True),
+                # Việt hóa header các cột từ Age → Credit_History_Months cho customer-facing view
+                _vi_headers = {
+                    'Age': 'Tuổi',
+                    'Annual_Income': 'Thu nhập hàng năm (USD)',
+                    'Outstanding_Debt': 'Nợ tồn đọng (USD)',
+                    'Credit_Utilization': 'Tỷ lệ sử dụng tín dụng (%)',
+                    'Delay_Days': 'Số ngày trả trễ',
+                    'Credit_History_Months': 'Lịch sử tín dụng (tháng)',
+                }
+                _display = history.rename(columns=_vi_headers).reset_index(drop=True)
+                st.dataframe(_display,
                             use_container_width=True, hide_index=True)
                 st.caption(f'Tìm thấy **{len(history)} lượt** cho email khớp `{search_email}`.')
 

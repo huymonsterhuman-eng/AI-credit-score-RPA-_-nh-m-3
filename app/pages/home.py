@@ -33,8 +33,9 @@ st.markdown("""
 st.markdown("""
 <style>
   /* Font & background */
-  html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif; }
-  .main { background: #f0f4f8; }
+  html, body, [class*="css"] { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; }
+  .stApp { background: #0b1220; }
+  .main .block-container { max-width: 1240px; padding-top: 1.5rem; }
 
   /* Ẩn header mặc định Streamlit */
   header[data-testid="stHeader"] { background: transparent; }
@@ -42,67 +43,126 @@ st.markdown("""
 
   /* Navbar top */
   .navbar {
-    background: linear-gradient(135deg, #1a237e 0%, #1565c0 100%);
-    padding: 16px 40px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    padding: 18px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-radius: 0 0 16px 16px;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(21,101,192,0.3);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(96,165,250,0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   }
-  .navbar-brand { color: white; font-size: 22px; font-weight: 700; letter-spacing: 1px; }
-  .navbar-sub { color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 2px; }
+  .navbar-brand { color: #f1f5f9; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+  .navbar-sub { color: rgba(241,245,249,0.7); font-size: 13px; margin-top: 3px; }
 
   /* Hero banner */
   .hero {
-    background: linear-gradient(135deg, #1565c0 0%, #0d47a1 50%, #1a237e 100%);
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 45%, #0f172a 100%);
     border-radius: 16px;
-    padding: 40px;
-    color: white;
+    padding: 44px 40px;
+    color: #f8fafc;
     text-align: center;
     margin-bottom: 28px;
-    box-shadow: 0 8px 32px rgba(21,101,192,0.25);
+    border: 1px solid rgba(96,165,250,0.18);
+    box-shadow: 0 10px 40px rgba(30,58,138,0.35);
+    position: relative;
+    overflow: hidden;
   }
-  .hero h1 { font-size: 32px; font-weight: 800; margin: 0 0 10px; }
-  .hero p { font-size: 16px; opacity: 0.88; margin: 0; }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%; right: -20%;
+    width: 60%; height: 200%;
+    background: radial-gradient(circle, rgba(96,165,250,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero h1 { font-size: 32px; font-weight: 800; margin: 0 0 10px; letter-spacing: -0.5px; }
+  .hero p { font-size: 15px; opacity: 0.85; margin: 0; }
 
-  /* Card wrapper */
+  /* Card wrapper — dark professional */
   .card {
-    background: white;
+    background: #131c2e;
+    border: 1px solid #1f2a44;
     border-radius: 14px;
-    padding: 28px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.07);
-    margin-bottom: 20px;
+    padding: 26px 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    margin-bottom: 18px;
   }
   .card-title {
-    font-size: 16px; font-weight: 700; color: #1565c0;
-    border-left: 4px solid #1565c0;
-    padding-left: 12px; margin-bottom: 12px;
-    text-transform: uppercase; letter-spacing: 0.5px;
+    font-size: 13px; font-weight: 700; color: #60a5fa;
+    border-left: 3px solid #60a5fa;
+    padding-left: 12px; margin-bottom: 18px;
+    text-transform: uppercase; letter-spacing: 1.2px;
   }
 
-  /* Preset buttons */
-  div[data-testid="column"] button {
+  /* Input labels + widget text — sáng hơn trên nền tối */
+  .stMarkdown, label, p, .stCaption { color: #cbd5e1 !important; }
+
+  /* Text/number inputs — subtle border, focus glow */
+  [data-testid="stTextInput"] input,
+  [data-testid="stNumberInput"] input,
+  [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+  textarea {
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    color: #e2e8f0 !important;
     border-radius: 8px !important;
+  }
+  [data-testid="stTextInput"] input:focus,
+  [data-testid="stNumberInput"] input:focus {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 2px rgba(96,165,250,0.15) !important;
+  }
+
+  /* Preset buttons + secondary buttons */
+  div[data-testid="column"] .stButton > button {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
     font-weight: 600 !important;
+    padding: 12px !important;
+    transition: all 0.15s ease-in-out !important;
+  }
+  div[data-testid="column"] .stButton > button:hover {
+    background: #1e3a8a !important;
+    border-color: #60a5fa !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(96,165,250,0.2) !important;
+  }
+
+  /* Submit button — highlight primary action */
+  div[data-testid="stForm"] button[type="submit"] {
+    background: linear-gradient(135deg, #2563eb, #1e3a8a) !important;
+    color: white !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    padding: 14px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    box-shadow: 0 6px 20px rgba(37,99,235,0.35) !important;
     transition: all 0.2s !important;
+  }
+  div[data-testid="stForm"] button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(37,99,235,0.5) !important;
   }
 
   /* Result card */
   .result-badge {
     border-radius: 16px;
-    padding: 20px 24px;
+    padding: 22px 26px;
     text-align: center;
     color: white;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
   .result-badge .label { font-size: 13px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
   .result-badge .value { font-size: 44px; font-weight: 800; margin: 8px 0 4px; }
   .result-badge .sub   { font-size: 15px; opacity: 0.85; }
   .result-badge .conf  { font-size: 13px; margin-top: 10px; opacity: 0.8; }
 
-  /* Tip sections */
+  /* Tip sections — dark variants */
   .tip-section {
     border-radius: 10px;
     padding: 14px 18px;
@@ -110,40 +170,35 @@ st.markdown("""
     line-height: 1.7;
     font-size: 14px;
   }
-  .tip-urgent   { background: #fff0f0; border-left: 4px solid #e53935; color: #333; }
-  .tip-midterm  { background: #fff8e1; border-left: 4px solid #f9a825; color: #333; }
-  .tip-longterm { background: #e3f2fd; border-left: 4px solid #1565c0; color: #333; }
-  .tip-strength { background: #e8f5e9; border-left: 4px solid #2e7d32; color: #333; }
+  .tip-urgent   { background: rgba(239,68,68,0.10);  border-left: 4px solid #ef4444; color: #fecaca; }
+  .tip-midterm  { background: rgba(245,158,11,0.10); border-left: 4px solid #f59e0b; color: #fde68a; }
+  .tip-longterm { background: rgba(59,130,246,0.10); border-left: 4px solid #3b82f6; color: #bfdbfe; }
+  .tip-strength { background: rgba(34,197,94,0.10);  border-left: 4px solid #22c55e; color: #bbf7d0; }
   .tip-header   { font-weight: 700; font-size: 13px; text-transform: uppercase;
                   letter-spacing: 0.5px; margin-bottom: 6px; }
 
   /* Divider */
   .section-divider {
-    border: none; border-top: 2px solid #e8edf5; margin: 24px 0;
+    border: none; border-top: 1px solid #1f2a44; margin: 24px 0;
   }
 
   /* Disclaimer */
   .disclaimer {
-    background: #e8edf5; border-radius: 10px; padding: 14px 18px;
-    font-size: 12px; color: #546e7a; margin-top: 20px;
+    background: #131c2e; border: 1px solid #1f2a44; border-radius: 10px;
+    padding: 14px 18px; font-size: 12px; color: #94a3b8; margin-top: 20px;
+  }
+
+  /* Checkbox + slider — align với dark theme */
+  [data-testid="stCheckbox"] label { color: #cbd5e1 !important; }
+  .stSlider [data-baseweb="slider"] div[role="slider"] {
+    background: #60a5fa !important;
   }
 
   /* Required field asterisk */
   .req::after {
     content: " *";
-    color: #e53935;
+    color: #ef4444;
     font-weight: 700;
-  }
-
-  div[data-testid="stForm"] button[type="submit"] {
-    background: linear-gradient(135deg, #1565c0, #0d47a1) !important;
-    color: white !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    padding: 14px !important;
-    border-radius: 10px !important;
-    border: none !important;
-    box-shadow: 0 4px 16px rgba(21,101,192,0.3) !important;
   }
 </style>
 """, unsafe_allow_html=True)
@@ -426,10 +481,13 @@ if submitted:
             marker_line_width=0,
         ))
         fig.update_layout(
-            title=dict(text='Xác suất theo từng nhóm tín dụng', font=dict(size=15, color='#1565c0')),
-            yaxis=dict(range=[0, 1.1], tickformat='.0%', gridcolor='#f0f0f0'),
-            xaxis=dict(tickfont=dict(size=13, color='#333')),
-            plot_bgcolor='white', paper_bgcolor='white',
+            title=dict(text='Xác suất theo từng nhóm tín dụng',
+                        font=dict(size=15, color='#60a5fa')),
+            yaxis=dict(range=[0, 1.1], tickformat='.0%',
+                        gridcolor='#1f2a44', tickfont=dict(color='#cbd5e1')),
+            xaxis=dict(tickfont=dict(size=13, color='#e2e8f0')),
+            plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#cbd5e1'),
             height=300, margin=dict(l=10, r=10, t=40, b=10),
             showlegend=False,
         )
@@ -528,21 +586,28 @@ if submitted:
 
                 fig_diff = go.Figure(go.Bar(
                     y=chart_df['Feature'], x=chart_df['SignedImpact'], orientation='h',
-                    marker_color=['#2e7d32' if i == 'good' else '#c62828' for i in chart_df['Impact']],
+                    marker_color=['#22c55e' if i == 'good' else '#ef4444' for i in chart_df['Impact']],
                     text=[(f"{r['Prev']} → {r['Curr']}" if r['IsCat']
                            else (r['Format'] or '{:.1f}').format(r['Prev']) + ' → ' +
                                 (r['Format'] or '{:.1f}').format(r['Curr']))
                           for _, r in chart_df.iterrows()],
                     textposition='outside',
+                    textfont=dict(color='#e2e8f0'),
                 ))
                 fig_diff.update_layout(
                     height=max(280, 40 + 40 * len(chart_df)),
                     margin=dict(l=20, r=120, t=10, b=10),
-                    xaxis_title='Tác động (→ xanh = cải thiện, ← đỏ = xấu đi)',
-                    plot_bgcolor='white', paper_bgcolor='white',
+                    xaxis=dict(
+                        title=dict(text='Tác động (→ xanh = cải thiện, ← đỏ = xấu đi)',
+                                    font=dict(color='#94a3b8')),
+                        gridcolor='#1f2a44', tickfont=dict(color='#cbd5e1'),
+                    ),
+                    yaxis=dict(tickfont=dict(color='#e2e8f0')),
+                    plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#cbd5e1'),
                     showlegend=False,
                 )
-                fig_diff.add_vline(x=0, line_width=1, line_color='#ccc')
+                fig_diff.add_vline(x=0, line_width=1, line_color='#334155')
                 st.plotly_chart(fig_diff, use_container_width=True)
 
     # ── Gửi webhook n8n ──────────────────────────────────────────────────────
