@@ -50,10 +50,10 @@ Bấm **Install** → chờ 1–2 phút. Đây là node giúp render HTML thành
    - Application type: Web application
    - Authorized redirect URI: `http://localhost:5678/rest/oauth2-credential/callback`
    - Copy Client ID + Secret vào n8n → **Sign in with Google** → cho phép access
-3. Tạo Google Sheet mới, đặt tên **"Credit Scoring Log"** với các cột:
+3. Tạo Google Sheet mới, đặt tên **"Credit Scoring Log"** với các cột (chính xác từng ký tự — n8n mapping match theo tên):
    ```
-   timestamp | customer_name | customer_email | fico_score | rating |
-   predicted_class | P_poor | P_standard | P_good | notes
+   Thời gian | Họ tên | Email | Nhóm dự đoán | Xác suất Poor |
+   Xác suất Standard | Xác suất Good | Ghi chú
    ```
 4. Copy Sheet ID từ URL (đoạn giữa `/d/` và `/edit`) — sẽ dùng lúc build workflow.
 

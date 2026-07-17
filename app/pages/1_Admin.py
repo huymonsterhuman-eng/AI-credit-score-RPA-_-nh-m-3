@@ -17,7 +17,7 @@ from utils import (CLASS_COLORS, check_admin_password, diff_inputs,
                     load_sheet_data)
 
 
-st.set_page_config(page_title=f'{APP_TITLE} — Admin', page_icon='📊', layout='wide')
+st.set_page_config(page_title=f'{APP_TITLE} — Admin', layout='wide')
 
 # ============ Session state ============
 if 'admin_logged_in' not in st.session_state:
@@ -56,7 +56,7 @@ def show_dashboard():
     # Header
     c1, c2, c3 = st.columns([6, 1, 1])
     with c1:
-        st.title('📊 Admin Dashboard')
+        st.title('Admin Dashboard')
         st.caption('Báo cáo tổng hợp các lượt tra cứu tín dụng')
     with c2:
         if st.button('🔄 Refresh', use_container_width=True):
@@ -241,20 +241,21 @@ def show_dashboard():
     # ============ Section: Case cần review (sort by P(Poor)) ============
     st.markdown('### ⚠️ Case cần review — sắp xếp theo rủi ro cao nhất')
     if 'Xác suất Poor' in dff.columns:
-        # Tổng số case
         total_review = len(dff)
         n_poor_class = int((dff[class_col] == 'Poor').sum()) if class_col else 0
+        n_high_risk = int((dff['Xác suất Poor'] >= 0.5).sum())
         st.caption(
-            f'Tổng: **{total_review} lượt** tra cứu · '
-            f'Trong đó **{n_poor_class} case** được model phân loại là Poor.'
+            f'Tổng: **{total_review} lượt** · '
+            f'Model phân loại **{n_poor_class}** là Poor · '
+            f'**{n_high_risk}** case có P(Poor) ≥ 50% (rủi ro cao).'
         )
 
-        # Filter mode
+        # Filter mode — default: Poor cases (case ưu tiên xử lý nhất)
         mode = st.radio(
             'Bộ lọc',
-            ['Tất cả case (sort theo P(Poor) giảm dần)',
-             'Chỉ case phân loại Poor',
-             'Case có P(Poor) ≥ ngưỡng'],
+            ['Chỉ case phân loại Poor',
+             'Case có P(Poor) ≥ ngưỡng',
+             'Tất cả case (sort theo P(Poor) giảm dần)'],
             horizontal=True,
         )
 
@@ -264,11 +265,10 @@ def show_dashboard():
         elif mode.startswith('Case có P(Poor)'):
             threshold = st.slider(
                 'Ngưỡng P(Poor) tối thiểu (%)',
-                0, 100, 30, step=5,
+                0, 100, 50, step=5,
                 help='Kéo slider để filter — table dưới sẽ update ngay',
             ) / 100
             review_df = review_df[review_df['Xác suất Poor'] >= threshold]
-            # Feedback ngay ở đây để user thấy slider hoạt động
             max_p_poor = dff['Xác suất Poor'].max() * 100
             st.caption(
                 f'Ngưỡng hiện tại: **{threshold*100:.0f}%** — '
@@ -276,19 +276,27 @@ def show_dashboard():
                 f'Tìm thấy **{len(review_df)} case** ≥ ngưỡng.'
             )
 
-        review_df = review_df.sort_values('Xác suất Poor', ascending=False)
+        review_df = review_df.sort_values('Xác suất Poor', ascending=False).copy()
+
+        # Thêm cột Mức rủi ro với emoji để quick scan
+        def _risk_label(p):
+            if p >= 0.7: return '🔴 Rất cao'
+            if p >= 0.5: return '🟠 Cao'
+            if p >= 0.3: return '🟡 Trung bình'
+            return '🟢 Thấp'
+        review_df['Mức rủi ro'] = review_df['Xác suất Poor'].apply(_risk_label)
 
         if not review_df.empty:
             display_cols = [c for c in
                             ['Thời gian', 'Họ tên', 'Email', class_col,
-                             'Xác suất Poor', 'Ghi chú']
+                             'Mức rủi ro', 'Xác suất Poor', 'Status', 'Ghi chú']
                             if c and c in review_df.columns]
 
-            col_config = {}
-            if 'Xác suất Poor' in display_cols:
-                col_config['Xác suất Poor'] = st.column_config.ProgressColumn(
-                    'Xác suất Poor', min_value=0, max_value=1, format='%.1f%%',
-                )
+            col_config = {
+                'Xác suất Poor': st.column_config.ProgressColumn(
+                    'P(Poor)', min_value=0, max_value=1, format='%.1f%%',
+                ),
+            }
             if 'Thời gian' in display_cols:
                 col_config['Thời gian'] = st.column_config.DatetimeColumn(
                     'Thời gian', format='DD/MM/YYYY HH:mm',
@@ -299,9 +307,9 @@ def show_dashboard():
                 use_container_width=True,
                 hide_index=True,
                 column_config=col_config,
-                height=min(400, 50 + 35 * min(len(review_df), 10)),
+                height=min(500, 50 + 35 * min(len(review_df), 12)),
             )
-            st.caption(f'Hiển thị **{len(review_df)} case**.')
+            st.caption(f'Hiển thị **{len(review_df)} case** — click header cột để sort thêm.')
         else:
             st.info('Không có case nào khớp bộ lọc.')
     else:
@@ -319,81 +327,51 @@ def show_dashboard():
                             use_container_width=True, hide_index=True)
                 st.caption(f'Tìm thấy **{len(history)} lượt** cho email khớp `{search_email}`.')
 
-                # Nếu có nhiều hơn 1 lượt → vẽ trend cho customer (từ SQLite)
+                # Nếu có nhiều hơn 1 lượt → vẽ trend cho customer (từ Google Sheet)
                 if len(history) > 1:
-                    st.markdown('#### 📈 Xu hướng cải thiện của khách (từ SQLite)')
-                    try:
-                        import sqlite3
-                        from config import PROJECT_ROOT
-                        _db = PROJECT_ROOT / 'data' / 'predictions.db'
-                        if not _db.exists():
-                            st.info('Chưa có SQLite database — chỉ dùng Google Sheet để hiển thị.')
-                        else:
-                            _email_lc = search_email.strip().lower()
-                            with sqlite3.connect(_db) as _conn:
-                                _sql_df = pd.read_sql_query(
-                                    """SELECT timestamp, predicted_class,
-                                              p_poor, p_standard, p_good
-                                       FROM predictions
-                                       WHERE email LIKE ? ORDER BY timestamp ASC""",
-                                    _conn, params=(f'%{_email_lc}%',)
-                                )
-                            if _sql_df.empty:
-                                st.info('Email chưa có trong SQLite (chỉ có trên Sheet cũ).')
-                            else:
-                                _sql_df['timestamp'] = pd.to_datetime(_sql_df['timestamp'])
-                                # Thêm số thứ tự lượt
-                                _sql_df['Lượt'] = range(1, len(_sql_df) + 1)
+                    st.markdown('#### 📈 Xu hướng cải thiện của khách')
+                    prob_cols = ['Xác suất Poor', 'Xác suất Standard', 'Xác suất Good']
+                    if all(c in history.columns for c in prob_cols) and 'Thời gian' in history.columns:
+                        _hist = history.sort_values('Thời gian').reset_index(drop=True)
+                        _hist['Lượt'] = range(1, len(_hist) + 1)
 
-                                fig_trend = go.Figure()
-                                fig_trend.add_trace(go.Scatter(
-                                    x=_sql_df['Lượt'], y=_sql_df['p_poor'],
-                                    name='P(Poor)', mode='lines+markers',
-                                    line=dict(color=CLASS_COLORS['Poor'], width=2),
-                                    marker=dict(size=10),
-                                ))
-                                fig_trend.add_trace(go.Scatter(
-                                    x=_sql_df['Lượt'], y=_sql_df['p_standard'],
-                                    name='P(Standard)', mode='lines+markers',
-                                    line=dict(color=CLASS_COLORS['Standard'], width=2),
-                                    marker=dict(size=10),
-                                ))
-                                fig_trend.add_trace(go.Scatter(
-                                    x=_sql_df['Lượt'], y=_sql_df['p_good'],
-                                    name='P(Good)', mode='lines+markers',
-                                    line=dict(color=CLASS_COLORS['Good'], width=2),
-                                    marker=dict(size=10),
-                                ))
-                                fig_trend.update_layout(
-                                    height=350,
-                                    yaxis=dict(range=[0, 1], tickformat='.0%',
-                                                title='Xác suất'),
-                                    xaxis=dict(title='Số lượt tra cứu (theo thứ tự)',
-                                                dtick=1),
-                                    margin=dict(l=20, r=20, t=30, b=20),
-                                    hovermode='x unified',
-                                )
-                                st.plotly_chart(fig_trend, use_container_width=True)
-                                st.caption(
-                                    f'Hiển thị {len(_sql_df)} lượt tra cứu từ SQLite. '
-                                    f'Trục X = thứ tự lượt (cũ nhất → mới nhất).'
-                                )
-                    except Exception as _e:
-                        st.caption(f'Không đọc được SQLite: {_e}')
+                        fig_trend = go.Figure()
+                        for col, name, color_key in [
+                            ('Xác suất Poor', 'P(Poor)', 'Poor'),
+                            ('Xác suất Standard', 'P(Standard)', 'Standard'),
+                            ('Xác suất Good', 'P(Good)', 'Good'),
+                        ]:
+                            fig_trend.add_trace(go.Scatter(
+                                x=_hist['Lượt'], y=_hist[col],
+                                name=name, mode='lines+markers',
+                                line=dict(color=CLASS_COLORS[color_key], width=2),
+                                marker=dict(size=10),
+                                hovertemplate=f'{name}: %{{y:.1%}}<extra></extra>',
+                            ))
+                        fig_trend.update_layout(
+                            height=350,
+                            yaxis=dict(range=[0, 1], tickformat='.0%', title='Xác suất'),
+                            xaxis=dict(title='Số lượt tra cứu (theo thứ tự)', dtick=1),
+                            margin=dict(l=20, r=20, t=30, b=20),
+                            hovermode='x unified',
+                        )
+                        st.plotly_chart(fig_trend, use_container_width=True)
+                        st.caption(
+                            f'Hiển thị {len(_hist)} lượt tra cứu từ Google Sheet. '
+                            f'Trục X = thứ tự lượt (cũ nhất → mới nhất).'
+                        )
+                    else:
+                        st.info(
+                            'Sheet thiếu cột "Thời gian" hoặc "Xác suất Poor/Standard/Good" — '
+                            'không vẽ được trend chart.'
+                        )
 
-                    # ===== Section: Factor comparison (từ SQLite local) =====
-                    st.markdown('#### 🔬 So sánh yếu tố giữa lần đầu và lần cuối')
-                    st.caption(
-                        'Đọc từ SQLite local (data/predictions.db). '
-                        'Nếu customer submit trên máy khác thì không có dữ liệu ở đây.'
-                    )
+                    # ===== Section: Factor comparison (từ SQLite local — chỉ hiện nếu có data) =====
                     try:
                         import sqlite3, json as _json
                         from config import PROJECT_ROOT
                         _db = PROJECT_ROOT / 'data' / 'predictions.db'
-                        if not _db.exists():
-                            st.info('Chưa có database — chưa customer nào submit sau khi Phase 1 deploy.')
-                        else:
+                        if _db.exists():
                             _email_lc = search_email.strip().lower()
                             with sqlite3.connect(_db) as _conn:
                                 _conn.row_factory = sqlite3.Row
@@ -402,15 +380,13 @@ def show_dashboard():
                                        WHERE email LIKE ? ORDER BY timestamp ASC""",
                                     (f'%{_email_lc}%',)
                                 ).fetchall()
-                            if len(_rows) < 2:
-                                st.info(f'Cần ≥ 2 lượt trong SQLite của email `{search_email}` để so sánh factor. Hiện có {len(_rows)}.')
-                            else:
+                            if len(_rows) >= 2:
+                                st.markdown('#### 🔬 So sánh yếu tố giữa lần đầu và lần cuối')
+                                st.caption('Đọc từ SQLite local (chỉ hiện khi khách submit ≥ 2 lượt trên máy này).')
                                 first_inputs = _json.loads(_rows[0]['inputs_json'])
                                 last_inputs = _json.loads(_rows[-1]['inputs_json'])
                                 _diffs = diff_inputs(first_inputs, last_inputs, top_n=10)
-                                if not _diffs:
-                                    st.info('Không phát hiện thay đổi actionable giữa lần đầu và lần cuối.')
-                                else:
+                                if _diffs:
                                     _cmp_df = pd.DataFrame([
                                         {
                                             'Yếu tố': d['label'],
@@ -421,8 +397,8 @@ def show_dashboard():
                                         for d in _diffs
                                     ])
                                     st.dataframe(_cmp_df, use_container_width=True, hide_index=True)
-                    except Exception as _e:
-                        st.caption(f'Không đọc được factor diff: {_e}')
+                    except Exception:
+                        pass
             else:
                 st.info(f'Không tìm thấy lượt tra cứu nào với email `{search_email}`.')
 

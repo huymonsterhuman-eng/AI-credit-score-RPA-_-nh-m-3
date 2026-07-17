@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
-from config import (APP_SUBTITLE, APP_TITLE, DISCLAIMER,
+from config import (APP_SUBTITLE, APP_TITLE,
                      N8N_WEBHOOK_URL, WEBHOOK_TIMEOUT)
 from utils import (CLASS_COLORS, CLASS_LABELS_VI, derive_behavior,
                     diff_inputs, get_previous_prediction, get_shap_values,
@@ -23,28 +23,19 @@ with st.sidebar:
     st.caption(APP_SUBTITLE)
     st.markdown('---')
 
+    # Load model sớm để bắt FileNotFoundError trước khi user điền form
     try:
-        _, schema = load_artifacts()
-        metrics = schema.get('metrics', {})
-        st.subheader('Thông số mô hình')
-        c1, c2 = st.columns(2)
-        c1.metric('F1 macro', f"{metrics.get('f1_macro', 0):.3f}")
-        c2.metric('AUC (ovr)', f"{metrics.get('auc_ovr', 0):.3f}")
-        st.metric('Accuracy', f"{metrics.get('accuracy', 0):.3f}")
-        st.caption(f"Model: **{schema.get('best_model', 'N/A')}**")
+        load_artifacts()
     except FileNotFoundError as e:
         st.error(str(e))
         st.stop()
 
-    st.markdown('---')
-    st.info(DISCLAIMER)
-
 
 # ============ Header ============
-st.title('Credit Classification — Phân loại mức tín dụng cá nhân')
+st.title('Đánh giá tín dụng cá nhân')
 st.write(
-    'Nhập thông tin bên dưới để nhận kết quả phân loại tín dụng (Poor / Standard / Good) '
-    'kèm gợi ý cải thiện.'
+    'Nhập thông tin tài chính của bạn bên dưới để nhận đánh giá mức độ tín dụng '
+    'và gợi ý cải thiện phù hợp.'
 )
 
 # ============ Presets & Session State ============
@@ -217,7 +208,7 @@ with st.form('credit_form'):
         customer_name = c1.text_input('Họ tên', key='customer_name')
         customer_email = c2.text_input('Email', key='customer_email')
 
-    submitted = st.form_submit_button('🔍 Dự đoán điểm tín dụng', use_container_width=True)
+    submitted = st.form_submit_button('🔍 Nhận đánh giá tín dụng', use_container_width=True)
 
 
 # ============ Kết quả ============
