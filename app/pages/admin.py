@@ -1,4 +1,4 @@
-"""Admin Dashboard — báo cáo tổng hợp cho nhân viên."""
+"""Admin Dashboard - báo cáo tổng hợp cho nhân viên."""
 
 import sys
 from datetime import date, timedelta
@@ -7,16 +7,18 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import requests
 import streamlit as st
 
 # Cho phép import từ app/ (parent của pages/)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import ADMIN_PASSWORD, APP_TITLE
-from utils import (CLASS_COLORS, check_admin_password, diff_inputs,
-                    load_sheet_data)
+from config import APP_TITLE, N8N_WEEKLY_WEBHOOK_URL, WEBHOOK_TIMEOUT
+from utils import (CLASS_COLORS, diff_inputs, load_sheet_data, load_weekly_report_data)
 
+st.set_page_config(page_title=f'{APP_TITLE} - Admin', page_icon=None, layout='wide')
 
+<<<<<<<< HEAD:app/pages/1_Admin.py
 st.set_page_config(page_title=f'{APP_TITLE} — Admin', layout='wide')
 
 # ============ Session state ============
@@ -38,12 +40,25 @@ def show_login():
                 st.rerun()
             else:
                 st.error('❌ Mật khẩu không đúng.')
+========
+# ── Auth guard ───────────────────────────────────────────────────────────────
+if st.session_state.get('role') != 'admin':
+    st.switch_page('login.py')
+>>>>>>>> origin/main:app/pages/admin.py
 
+# ── Ẩn sidebar ───────────────────────────────────────────────────────────────
+st.markdown("""
+<style>
+  [data-testid="stSidebar"]        { display: none !important; }
+  [data-testid="collapsedControl"] { display: none !important; }
+  #MainMenu, footer                { visibility: hidden; }
+</style>
+""", unsafe_allow_html=True)
 
 def logout():
-    st.session_state.admin_logged_in = False
-    st.rerun()
-
+    st.session_state.role = None
+    st.session_state.username = None
+    st.switch_page('login.py')
 
 # ============ Dashboard ============
 @st.cache_data(ttl=30, show_spinner='Đang tải dữ liệu từ Google Sheets...')
@@ -59,11 +74,11 @@ def show_dashboard():
         st.title('Admin Dashboard')
         st.caption('Báo cáo tổng hợp các lượt tra cứu tín dụng')
     with c2:
-        if st.button('🔄 Refresh', use_container_width=True):
+        if st.button('Refresh', use_container_width=True):
             st.cache_data.clear()
             st.rerun()
     with c3:
-        if st.button('🚪 Logout', use_container_width=True):
+        if st.button('Đăng xuất', use_container_width=True):
             logout()
 
     # Load data
@@ -122,7 +137,7 @@ def show_dashboard():
         return
 
     # ============ KPI Cards — Hàng 1: Phân loại ============
-    st.markdown('### 📈 Chỉ số tổng quan')
+    st.markdown('### Chỉ số tổng quan')
     total = len(dff)
     class_col = 'Nhóm dự đoán' if 'Nhóm dự đoán' in dff.columns else None
 
@@ -180,7 +195,7 @@ def show_dashboard():
         emails_valid = dff[has_email]['Email'].astype(str).str.strip().str.lower()
 
         if len(emails_valid) > 0:
-            st.markdown('### 🔁 Phân bố số lần tra cứu của mỗi khách')
+            st.markdown('### Phân bố số lần tra cứu của mỗi khách')
             email_counts = emails_valid.value_counts()
 
             # Bin số lần
@@ -402,6 +417,39 @@ def show_dashboard():
             else:
                 st.info(f'Không tìm thấy lượt tra cứu nào với email `{search_email}`.')
 
+    # ============ Báo cáo tuần (Weekly_Report) ============
+    st.markdown('### Báo cáo tuần (Weekly_Report)')
+    st.caption(
+        'Hệ thống tự chạy **8:00 sáng thứ Hai** hàng tuần, hoặc bấm nút bên dưới để chạy ngay.'
+    )
+    w1, w2 = st.columns([1, 3])
+    with w1:
+        if st.button('Chạy báo cáo tuần ngay', use_container_width=True, key='run_weekly'):
+            if not N8N_WEEKLY_WEBHOOK_URL:
+                st.error('Chưa cấu hình N8N_WEEKLY_WEBHOOK_URL trong config.py')
+            else:
+                try:
+                    r = requests.post(N8N_WEEKLY_WEBHOOK_URL, json={}, timeout=WEBHOOK_TIMEOUT)
+                    if r.ok:
+                        st.success('Đã kích hoạt báo cáo tuần. Kiểm tra tab Weekly_Report sau vài giây.')
+                        st.cache_data.clear()
+                    else:
+                        st.warning(f'Webhook trả về status {r.status_code}')
+                except requests.RequestException as e:
+                    st.error(f'Không kết nối được n8n: {e}')
+
+    try:
+        weekly_df = load_weekly_report_data()
+        if weekly_df.empty:
+            st.warning(
+                'Chưa có dòng nào trong tab Weekly_Report. '
+                'Tạo tab Weekly_Report trong Sheet, import lại workflow n8n, rồi bấm "Chạy báo cáo tuần ngay".'
+            )
+        else:
+            st.dataframe(weekly_df, use_container_width=True, hide_index=True)
+    except Exception as e:
+        st.warning(f'Không đọc được Weekly_Report: {e}')
+
     # ============ Export CSV ============
     st.markdown('### 💾 Xuất dữ liệu')
     csv = dff.to_csv(index=False).encode('utf-8-sig')
@@ -414,7 +462,4 @@ def show_dashboard():
 
 
 # ============ Main ============
-if st.session_state.admin_logged_in:
-    show_dashboard()
-else:
-    show_login()
+show_dashboard()
