@@ -34,7 +34,7 @@ st.markdown("""
 <style>
   /* Font & background */
   html, body, [class*="css"] { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; }
-  .stApp { background: #0b1220; }
+  .stApp { background: #f4f7fb; }
   .main .block-container { max-width: 1240px; padding-top: 1.5rem; }
 
   /* Ẩn header mặc định Streamlit */
@@ -43,29 +43,27 @@ st.markdown("""
 
   /* Navbar top */
   .navbar {
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
     padding: 18px 32px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-radius: 14px;
     margin-bottom: 20px;
-    border: 1px solid rgba(96,165,250,0.15);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    box-shadow: 0 6px 20px rgba(30,64,175,0.20);
   }
-  .navbar-brand { color: #f1f5f9; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
-  .navbar-sub { color: rgba(241,245,249,0.7); font-size: 13px; margin-top: 3px; }
+  .navbar-brand { color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+  .navbar-sub { color: rgba(255,255,255,0.85); font-size: 13px; margin-top: 3px; }
 
   /* Hero banner */
   .hero {
-    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 45%, #0f172a 100%);
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #3b82f6 100%);
     border-radius: 16px;
     padding: 44px 40px;
-    color: #f8fafc;
+    color: #ffffff;
     text-align: center;
     margin-bottom: 28px;
-    border: 1px solid rgba(96,165,250,0.18);
-    box-shadow: 0 10px 40px rgba(30,58,138,0.35);
+    box-shadow: 0 10px 32px rgba(30,64,175,0.25);
     position: relative;
     overflow: hidden;
   }
@@ -74,79 +72,68 @@ st.markdown("""
     position: absolute;
     top: -50%; right: -20%;
     width: 60%; height: 200%;
-    background: radial-gradient(circle, rgba(96,165,250,0.15) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 60%);
     pointer-events: none;
   }
   .hero h1 { font-size: 32px; font-weight: 800; margin: 0 0 10px; letter-spacing: -0.5px; }
-  .hero p { font-size: 15px; opacity: 0.85; margin: 0; }
+  .hero p { font-size: 15px; opacity: 0.9; margin: 0; }
 
-  /* Card wrapper — dark professional */
+  /* Card wrapper — light */
   .card {
-    background: #131c2e;
-    border: 1px solid #1f2a44;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
     padding: 26px 28px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 2px 10px rgba(15,23,42,0.06);
     margin-bottom: 18px;
   }
   .card-title {
-    font-size: 13px; font-weight: 700; color: #60a5fa;
-    border-left: 3px solid #60a5fa;
+    font-size: 13px; font-weight: 700; color: #1e40af;
+    border-left: 3px solid #1e40af;
     padding-left: 12px; margin-bottom: 18px;
     text-transform: uppercase; letter-spacing: 1.2px;
   }
 
-  /* Input labels + widget text — sáng hơn trên nền tối */
-  .stMarkdown, label, p, .stCaption { color: #cbd5e1 !important; }
-
-  /* Text/number inputs — subtle border, focus glow */
-  [data-testid="stTextInput"] input,
-  [data-testid="stNumberInput"] input,
-  [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-  textarea {
-    background: #0f172a !important;
-    border: 1px solid #334155 !important;
-    color: #e2e8f0 !important;
-    border-radius: 8px !important;
-  }
+  /* Input focus glow */
   [data-testid="stTextInput"] input:focus,
   [data-testid="stNumberInput"] input:focus {
-    border-color: #60a5fa !important;
-    box-shadow: 0 0 0 2px rgba(96,165,250,0.15) !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.15) !important;
   }
 
   /* Preset buttons + secondary buttons */
   div[data-testid="column"] .stButton > button {
-    background: #1e293b !important;
-    color: #e2e8f0 !important;
-    border: 1px solid #334155 !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
     padding: 12px !important;
     transition: all 0.15s ease-in-out !important;
   }
   div[data-testid="column"] .stButton > button:hover {
-    background: #1e3a8a !important;
-    border-color: #60a5fa !important;
+    background: #eff6ff !important;
+    border-color: #2563eb !important;
+    color: #1e40af !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(96,165,250,0.2) !important;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.15) !important;
   }
 
   /* Submit button — highlight primary action */
   div[data-testid="stForm"] button[type="submit"] {
-    background: linear-gradient(135deg, #2563eb, #1e3a8a) !important;
+    background: linear-gradient(135deg, #2563eb, #1e40af) !important;
     color: white !important;
     font-size: 16px !important;
     font-weight: 700 !important;
     padding: 14px !important;
     border-radius: 10px !important;
     border: none !important;
-    box-shadow: 0 6px 20px rgba(37,99,235,0.35) !important;
+    box-shadow: 0 6px 18px rgba(37,99,235,0.30) !important;
     transition: all 0.2s !important;
   }
   div[data-testid="stForm"] button[type="submit"]:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 28px rgba(37,99,235,0.5) !important;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.45) !important;
   }
 
   /* Result card */
@@ -155,43 +142,38 @@ st.markdown("""
     padding: 22px 26px;
     text-align: center;
     color: white;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
   }
   .result-badge .label { font-size: 13px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
   .result-badge .value { font-size: 44px; font-weight: 800; margin: 8px 0 4px; }
-  .result-badge .sub   { font-size: 15px; opacity: 0.85; }
-  .result-badge .conf  { font-size: 13px; margin-top: 10px; opacity: 0.8; }
+  .result-badge .sub   { font-size: 15px; opacity: 0.9; }
+  .result-badge .conf  { font-size: 13px; margin-top: 10px; opacity: 0.85; }
 
-  /* Tip sections — dark variants */
+  /* Tip sections — light variants */
   .tip-section {
     border-radius: 10px;
     padding: 14px 18px;
     margin: 10px 0;
     line-height: 1.7;
     font-size: 14px;
+    color: #1e293b;
   }
-  .tip-urgent   { background: rgba(239,68,68,0.10);  border-left: 4px solid #ef4444; color: #fecaca; }
-  .tip-midterm  { background: rgba(245,158,11,0.10); border-left: 4px solid #f59e0b; color: #fde68a; }
-  .tip-longterm { background: rgba(59,130,246,0.10); border-left: 4px solid #3b82f6; color: #bfdbfe; }
-  .tip-strength { background: rgba(34,197,94,0.10);  border-left: 4px solid #22c55e; color: #bbf7d0; }
+  .tip-urgent   { background: #fef2f2; border-left: 4px solid #ef4444; }
+  .tip-midterm  { background: #fffbeb; border-left: 4px solid #f59e0b; }
+  .tip-longterm { background: #eff6ff; border-left: 4px solid #3b82f6; }
+  .tip-strength { background: #f0fdf4; border-left: 4px solid #22c55e; }
   .tip-header   { font-weight: 700; font-size: 13px; text-transform: uppercase;
                   letter-spacing: 0.5px; margin-bottom: 6px; }
 
   /* Divider */
   .section-divider {
-    border: none; border-top: 1px solid #1f2a44; margin: 24px 0;
+    border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;
   }
 
   /* Disclaimer */
   .disclaimer {
-    background: #131c2e; border: 1px solid #1f2a44; border-radius: 10px;
-    padding: 14px 18px; font-size: 12px; color: #94a3b8; margin-top: 20px;
-  }
-
-  /* Checkbox + slider — align với dark theme */
-  [data-testid="stCheckbox"] label { color: #cbd5e1 !important; }
-  .stSlider [data-baseweb="slider"] div[role="slider"] {
-    background: #60a5fa !important;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 14px 18px; font-size: 12px; color: #64748b; margin-top: 20px;
   }
 
   /* Required field asterisk */
@@ -482,12 +464,12 @@ if submitted:
         ))
         fig.update_layout(
             title=dict(text='Xác suất theo từng nhóm tín dụng',
-                        font=dict(size=15, color='#60a5fa')),
+                        font=dict(size=15, color='#1e40af')),
             yaxis=dict(range=[0, 1.1], tickformat='.0%',
-                        gridcolor='#1f2a44', tickfont=dict(color='#cbd5e1')),
-            xaxis=dict(tickfont=dict(size=13, color='#e2e8f0')),
+                        gridcolor='#e2e8f0', tickfont=dict(color='#475569')),
+            xaxis=dict(tickfont=dict(size=13, color='#1e293b')),
             plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#cbd5e1'),
+            font=dict(color='#1e293b'),
             height=300, margin=dict(l=10, r=10, t=40, b=10),
             showlegend=False,
         )
@@ -592,22 +574,22 @@ if submitted:
                                 (r['Format'] or '{:.1f}').format(r['Curr']))
                           for _, r in chart_df.iterrows()],
                     textposition='outside',
-                    textfont=dict(color='#e2e8f0'),
+                    textfont=dict(color='#1e293b'),
                 ))
                 fig_diff.update_layout(
                     height=max(280, 40 + 40 * len(chart_df)),
                     margin=dict(l=20, r=120, t=10, b=10),
                     xaxis=dict(
                         title=dict(text='Tác động (→ xanh = cải thiện, ← đỏ = xấu đi)',
-                                    font=dict(color='#94a3b8')),
-                        gridcolor='#1f2a44', tickfont=dict(color='#cbd5e1'),
+                                    font=dict(color='#64748b')),
+                        gridcolor='#e2e8f0', tickfont=dict(color='#475569'),
                     ),
-                    yaxis=dict(tickfont=dict(color='#e2e8f0')),
+                    yaxis=dict(tickfont=dict(color='#1e293b')),
                     plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color='#cbd5e1'),
+                    font=dict(color='#1e293b'),
                     showlegend=False,
                 )
-                fig_diff.add_vline(x=0, line_width=1, line_color='#334155')
+                fig_diff.add_vline(x=0, line_width=1, line_color='#cbd5e1')
                 st.plotly_chart(fig_diff, use_container_width=True)
 
     # ── Gửi webhook n8n ──────────────────────────────────────────────────────

@@ -11,8 +11,8 @@ import plotly.io as pio
 import requests
 import streamlit as st
 
-# Set default Plotly theme to dark cho consistent với dark theme của app
-pio.templates.default = 'plotly_dark'
+# Set default Plotly theme to light cho consistent với light theme của app
+pio.templates.default = 'plotly_white'
 
 # Cho phép import từ app/ (parent của pages/)
 sys.path.insert(0, str(Path(__file__).parent.parent))
